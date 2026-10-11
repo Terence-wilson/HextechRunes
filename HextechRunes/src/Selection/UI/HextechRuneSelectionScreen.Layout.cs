@@ -230,10 +230,12 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 			return;
 		}
 
+		// 先标记删除再摘下：摘下时卡牌特效在 TreeExiting 里据此判断是销毁而不是暂时摘下，主动释放网格与材质。
+		// 还要接着播放的特效在重建前已经单独摘走（见 HextechRuneSelectionScreen.Vfx）。
 		foreach (Node child in _cardsRow.GetChildren())
 		{
-			_cardsRow.RemoveChild(child);
 			child.QueueFree();
+			_cardsRow.RemoveChild(child);
 		}
 
 		_holders.Clear();
