@@ -273,6 +273,32 @@ public static void RegisterExtraActProvider(Func<IRunState, string?> provider);
 
 硬依赖同样建议按程序集名检测、延迟注册，而不是在 manifest 里按 id 声明依赖，这样也能兼容程序集同名的二创版。
 
+### 选择界面表现层（IHextechSelectionPresenter，实验性）
+
+> 实验性接口：签名可能随版本调整，届时会在更新日志里写明。
+
+想用自己的界面呈现海克斯三选一（例如换一套场景和动画）、但玩法完全交给本体的模组，可以登记一个表现层：
+
+```csharp
+HextechRunesApi.RegisterSelectionPresenter(new MyPresenter());
+
+sealed class MyPresenter : IHextechSelectionPresenter
+{
+	public bool KeepsMapOpen => false;                                  // true：开选前不关地图，隐藏后也不进只读地图预览
+	public bool ShouldPresent(HextechSelectionSession session) => true; // 返回 false 时这一次仍用本体界面
+	public void Present(HextechSelectionSession session) { /* 搭建自己的界面 */ }
+}
+```
+
+- 只接管普通的玩家海克斯选择；“仅继续”、自选模式和锻造器选择仍用本体界面。最多登记一个表现层，之后的登记只记 Warn。
+- 接管后本体界面不构建 UI、不用共享暗色背景，但仍在覆盖层栈里保存选择状态。`session.Screen` 离开场景树（`Closed`）即本次选择结束。
+- 所有操作都走本体按钮原有的逻辑：`RerollOption`、`Choose`、`ConfirmEnemyHexes`、`RerollEnemyHex`、`ToggleEnemyHexRemoved`。重随次数、敌方海克斯权限（`CanAdjustEnemyHexes`）、联机同步和存档与本体界面一致。
+- 显示用的数据：`Options`、`Rarity`、`GetOptionFooter`（本体卡面上的附加说明）、`GetEnemyHex` 返回的 `HextechEnemyHexInfo`（标题、已格式化描述、图标、品级、附加悬停提示、是否已移除）。
+- 联机：`EnemyHexesChangedRemotely` 在权威玩家的敌方调整同步过来时触发；`HextechSelectionProgress.HasCompleted(netId)` 与 `Changed` 可用于显示“谁已经选好”。
+- 金色重随：`IsGoldenRerollActive` 表示下一次重随会升级，`GoldenRerollRarity` 是升级后的品级；重随后用 `GetOptionRarity(slot)` 取该位置的实际品级（`Rarity` 保持开选时的品级）。
+- 手柄：接管时本体界面没有可聚焦的节点。用 `SetControllerFocus(root, defaultFocus)` 告诉本体哪些节点属于表现层（焦点在其中时不会被抢回）以及默认焦点；不设置时本体不移动焦点。原版只按声明的焦点邻居移动焦点，表现层需要自己设置 `FocusNeighbor*`，并把原版的确认键（`MegaInput.select`）当作点击处理。
+- 表现层模组要硬依赖海克斯。用到这些类型的代码最好放在单独的程序集里，等 `HextechRunes` 程序集载入后再加载，这样游戏扫描你的主程序集时不会因为找不到海克斯的类型而失败。
+
 ## 六、排障
 
 - 日志前缀 `[HextechRunes][ExternalContent]`：包括重复注册冲突、非 Starter 外部符文被拒、过滤委托抛出异常。
@@ -290,4 +316,5 @@ public static void RegisterExtraActProvider(Func<IRunState, string?> provider);
 - UI labels: `SetPlayerRunePoolLabel(Type runeType, string poolKey)` picks the source pill on the selection screen (`HEXTECH_POOL.<poolKey>`; defaults to the character pool or `GENERIC`), and `RegisterConfigSectionTitle(string assetModId, string titleKey)` picks the config-menu group heading for everything registered with that `assetModId`. Put the texts in your mod's `relic_collection.json` (only vanilla table names are merged); a missing key is shown as the raw key instead of throwing. Tag pills read `HEXTECH_TAG.<tagKey>` the same way.
 - `isAvailableForPlayer` runs on every client and must be deterministic over synchronized state; a throwing predicate excludes the rune.
 - Hard-dependency helpers on `HextechRunesApi` also include `RegisterForgeShopPriceModifier(Func<RunState, int, int>)` (random-forge shop price modifiers, applied in registration order), `IsHextechRelic(RelicModel?)` (registry-based ownership check) and `StableIndex(RunState, int count, params string?[] salt)` (seed-stable index that never consumes shared RNG).
+- Selection presentation (hard dependency): `HextechRunesApi.RegisterSelectionPresenter(IHextechSelectionPresenter)` lets another mod draw the player-rune selection itself while Hextech Mayhem keeps the gameplay (pools, rerolls, enemy hexes, saves, multiplayer sync). The presenter gets a `HextechSelectionSession` with the options, enemy hexes (`HextechEnemyHexInfo`), reroll/choose/remove actions that go through the same logic as the built-in buttons, `EnemyHexesChangedRemotely` for the authority's synced adjustments, `HextechSelectionProgress` for who has already chosen, golden reroll state (`IsGoldenRerollActive`, `GoldenRerollRarity`, `GetOptionRarity`) and controller focus (`SetControllerFocus`). Experimental: signatures may still change.
 - Published interop signatures never change; new capabilities come as new methods with a higher `ApiVersion`. Internal classes such as `HextechCatalog` are not part of the contract; please do not patch them.

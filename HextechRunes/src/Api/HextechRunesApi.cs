@@ -287,6 +287,15 @@ public static class HextechRunesApi
 		}
 	}
 
+	// ---- 选择界面表现层 ----
+
+	/// <summary>
+	/// 登记外部表现层，接管海克斯三选一的界面（见 <see cref="IHextechSelectionPresenter"/>）。最多一个，
+	/// 之后的登记只记 Warn。建议在模组初始化时调用；本体只在打开选择界面时读取它。
+	/// </summary>
+	public static void RegisterSelectionPresenter(IHextechSelectionPresenter presenter) =>
+		HextechSelectionPresentation.Register(presenter);
+
 	// ---- 随机锻造器售价修正 / 海克斯归属判断 / 稳定哈希(拓展包等硬依赖模组使用) ----
 
 	private static readonly object ForgeShopPriceModifiersGate = new();

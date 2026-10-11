@@ -362,7 +362,9 @@ internal static partial class HextechRuneSelectionCoordinator
 	// 关掉地图才能显示选择覆盖层;返回 true 表示关过地图,选择结束后要重新打开(调用方等一帧再继续)。
 	private static bool CloseMapForSelection()
 	{
-		if (NMapScreen.Instance?.IsOpen != true || NGame.Instance == null)
+		if (NMapScreen.Instance?.IsOpen != true || NGame.Instance == null
+			// 外部表现层在打开的地图上呈现选择。
+			|| HextechSelectionPresentation.KeepsMapOpen)
 		{
 			return false;
 		}

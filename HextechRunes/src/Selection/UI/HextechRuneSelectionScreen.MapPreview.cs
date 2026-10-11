@@ -106,6 +106,11 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 
 		HextechLog.Info("Mayhem", $"SelectionScreen.AfterOverlayHidden: choiceLocked={_choiceLocked} capstoneOpen={NCapstoneContainer.Instance?.InUse == true} mapOpen={NMapScreen.Instance?.IsOpen == true}");
 		Visible = false;
+		// 外部表现层自己处理地图，不进入只读地图预览。
+		if (IsExternallyPresented)
+		{
+			return;
+		}
 
 		// 选择尚未完成、且玩家打开了地图 → 进入只读地图预览：禁止行进、显示提示，保留地图打开。
 		// 不强制关闭地图、不触碰选择的 TaskCompletionSource，所以查看地图绝不会跳过海克斯选择。
@@ -255,8 +260,18 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		}
 
 		Control? focused = GetViewport()?.GuiGetFocusOwner();
-		if (focused != null && IsAncestorOf(focused))
+		if (focused != null && (IsAncestorOf(focused) || IsFocusInsidePresenter(focused)))
 		{
+			return;
+		}
+
+		// 接管时本界面没有可聚焦的节点：只把焦点交给表现层指定的节点，没有指定就不动。
+		if (IsExternallyPresented)
+		{
+			if (PresenterDefaultFocus is { } presenterFocus)
+			{
+				RestoreFocusDeferred(presenterFocus);
+			}
 			return;
 		}
 

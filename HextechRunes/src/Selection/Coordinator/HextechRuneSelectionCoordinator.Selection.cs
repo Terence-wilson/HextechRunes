@@ -161,6 +161,7 @@ internal static partial class HextechRuneSelectionCoordinator
 				CreateRuneChoiceResult(actIndex, choiceOrdinal, screen, offeredOptionIds, selectedRelic),
 				context);
 			HextechLog.Info("Mayhem", $"RuneChoice sync local: act={actIndex} ordinal={choiceOrdinal} player={selection.Player.NetId} choiceId={sentChoiceId}");
+			HextechSelectionProgress.MarkCompleted(selection.Player.NetId);
 			_ = RequireCompletedSelection(
 				selectedRelic,
 				$"local {context} player={selection.Player.NetId} choiceId={sentChoiceId}");
@@ -187,6 +188,7 @@ internal static partial class HextechRuneSelectionCoordinator
 			context,
 			cancellationToken: cancellationToken);
 		HextechLog.Info("Mayhem", $"RuneChoice remote received: act={actIndex} ordinal={choiceOrdinal} player={selection.Player.NetId} choiceId={receivedChoiceId}");
+		HextechSelectionProgress.MarkCompleted(selection.Player.NetId);
 		return ResolveRemoteRuneChoice(modifier, selection.Player, actIndex, choiceOrdinal, decoded!);
 	}
 
