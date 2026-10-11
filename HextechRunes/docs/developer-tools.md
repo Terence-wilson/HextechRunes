@@ -76,6 +76,7 @@ python3 HextechRunes/tools/hextech_dev.py tests --target 0.111.0 --name HopperEs
 | `tools/build_and_deploy.sh` | Zsh 脚本，重建 `.build` 和 `dist`、导入、构建、打包；默认替换本机模组目录，设 `HEXTECH_DEPLOY=0` 才不部署；`HEXTECH_UPDATE_LATEST=1` 才改写 latest-version |
 | `tools/package_release.py [输出绝对路径] --dist <目录>` | 只打包现有 dist，不构建、不部署；校验 bundle，再按变体清单打 ZIP；包含 loader、PCK、manifest、各变体 DLL 和必要 `compat-target.txt`，不含更新日志 TXT；成功后才替换原 ZIP |
 | `tools/extract_near_death_feast_glow.gd -- <原版PCK> <输出PNG>` | 用 Godot `--headless --path tools -s <脚本绝对路径>` 运行，提取 SOUL_NEXUS 红光并写入指定 PNG；区域与来源见 [设计裁决 · 视觉](design-decisions.md#视觉) |
+| `tools/kiwi_vfx/export_selection_vfx.py --wad <英雄联盟 Game/DATA/FINAL/UI.wad.client> [--write]` | 重新导出海克斯选择界面的原版特效（`assets/images/effects/kiwi_selection/` 的数据文件与贴图）和 `tools/kiwi_vfx/reference/` 下的原版界面数据转储（`uibase.json`：KiwiAugmentSelection/UIBase 全部节点、Layer、状态列表与场景进出场；`particle_systems.json`：全部 25 个粒子系统的挂接节点、时长估算与发射器概要，未导出系统附完整数据）。默认只比对并报告差异（有差异退出 1），`--write` 才写入，像素未变的贴图不重写；需要 `pip install xxhash zstandard pillow`。接入的系统清单与 `space` 规则写在脚本里，要和 `HextechRuneSelectionScreen.Vfx` 与测试同步；出处见该目录 `SOURCE.md` |
 | `tools/mplab/run_mplab.sh` | 本机双客户端联机确定性实验：构建 `HextechMpLab` 驱动并临时放进游戏 mods 目录，主机与客户端自动跑同一局，结束后比对两边日志里的校验和分叉并移除驱动；排查联机分叉时按需使用 |
 | `tools/update_latest_version.py` / 工坊上传器 | 涉及版本发布或外部写入；按用户指定范围使用，不是代码修改后的自动步骤。源码直接提交到当前仓库，不再做镜像同步 |
 
