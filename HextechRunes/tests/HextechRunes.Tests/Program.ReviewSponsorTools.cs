@@ -43,6 +43,43 @@ internal static partial class Program
 		Expect(MainLoader.SelectVariant([], null) == null, "no variants");
 	}
 
+	// 智能应用控制拦截时 LoadFromAssemblyPath 抛带 0x800711C7 的 FileLoadException;
+	// 初始化器经反射调用时还会被 TargetInvocationException 包一层,两种都要认出来。
+	[HextechTest]
+	private static void LoaderRecognizesApplicationControlBlock()
+	{
+		var blocked = new FileLoadException("blocked") { HResult = unchecked((int)0x800711C7) };
+		Equal(MainLoader.LoadFailureKind.ApplicationControlBlocked, MainLoader.ClassifyLoadFailure(blocked), "direct block");
+		Equal(MainLoader.LoadFailureKind.ApplicationControlBlocked, MainLoader.ClassifyLoadFailure(new TargetInvocationException(blocked)), "wrapped block");
+		Equal(MainLoader.LoadFailureKind.Other, MainLoader.ClassifyLoadFailure(new FileLoadException("other")), "other load failure");
+	}
+
+	// 弹窗文字写死在加载器里:每种语言都要有文案,模组名与各语言 main_menu_ui 里的名称一致;
+	// 没覆盖的语言回退英文,版本过旧的正文带上游戏版本。
+	[HextechTest]
+	private static void LoaderFailureNoticeCoversModLanguages()
+	{
+		string repoRoot = Path.GetFullPath(Path.Combine(FindTestsSourceDirectory(), "..", "..", ".."));
+		foreach (string language in ModListLocLanguages)
+		{
+			string mainName = ReadMainMenuString(Path.Combine(repoRoot, "HextechRunes", "assets"), language, "HEXTECH_MOD_NAME");
+			string sponsorName = ReadMainMenuString(Path.Combine(repoRoot, "HextechRunesSponsorPack", "assets"), language, "HEXTECH_SPONSOR_MOD_NAME");
+			Expect(MainLoader.BuildFailureNotice(MainLoader.LoadFailureKind.Other, language, null).Title.Contains(mainName), $"main notice title for {language} uses {mainName}");
+			Expect(SponsorLoader.BuildFailureNotice(SponsorLoader.LoadFailureKind.RequiredModMissing, language, null).Title.Contains(sponsorName), $"sponsor notice title for {language} uses {sponsorName}");
+		}
+
+		Equal(MainLoader.BuildFailureNotice(MainLoader.LoadFailureKind.Other, "eng", null), MainLoader.BuildFailureNotice(MainLoader.LoadFailureKind.Other, "deu", null), "unlisted language falls back to English");
+		Expect(MainLoader.BuildFailureNotice(MainLoader.LoadFailureKind.UnsupportedGameVersion, "zhs", "v0.106.0").Body.Contains("v0.106.0"), "game version appears in the too-old notice");
+	}
+
+	private static string ReadMainMenuString(string assetsRoot, string language, string key)
+	{
+		string path = Path.Combine(assetsRoot, "localization", language, "main_menu_ui.json");
+		Dictionary<string, string> table = JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(path))
+			?? throw new InvalidOperationException($"{path} is not a string table");
+		return table[key];
+	}
+
 	// 拓展包加载器只认自己的变体清单名与程序集名。
 	// 只走不写日志的成功/拒绝路径:加载器的 Log.Error 在测试进程里会触碰 Godot 原生层。
 	[HextechTest]
@@ -72,6 +109,45 @@ internal static partial class Program
 			{
 				Directory.Delete(root, recursive: true);
 			}
+		}
+	}
+
+	// 拓展包排在本体前面时登记等待回调，本体加载器初始化结束后公布结果并同步调用；拓展包加载器自己不公布。
+	// 只走不写日志的路径：加载器的 Log 在测试进程里会触碰 Godot 原生层。
+	[HextechTest]
+	private static void SponsorLoaderWaitsForMainLoaderResult()
+	{
+		const string resultKey = "HextechRunes.Loader.Result";
+		const string waitersKey = "HextechRunes.Loader.Waiters";
+		object? savedResult = AppDomain.CurrentDomain.GetData(resultKey);
+		object? savedWaiters = AppDomain.CurrentDomain.GetData(waitersKey);
+		try
+		{
+			AppDomain.CurrentDomain.SetData(resultKey, null);
+			AppDomain.CurrentDomain.SetData(waitersKey, null);
+			// 测试进程已加载本体程序集：不公布结果的旧版本体加载器按已初始化处理。
+			Equal(SponsorLoader.RequiredLoaderResult.Ready, SponsorLoader.GetRequiredLoaderResult(), "legacy main loader with its assembly loaded");
+
+			List<bool> calls = [];
+			SponsorLoader.AddMainLoaderWaiter(calls.Add);
+			SponsorLoader.AddMainLoaderWaiter(calls.Add);
+			SponsorLoader.PublishMainLoaderResult(ready: true);
+			Expect(calls.Count == 0 && AppDomain.CurrentDomain.GetData(resultKey) == null, "the sponsor loader never publishes a result");
+
+			MainLoader.PublishMainLoaderResult(ready: true);
+			Expect(calls.Count == 2 && calls.All(static ready => ready), "every waiter hears that the main mod initialized");
+			Expect(AppDomain.CurrentDomain.GetData(waitersKey) == null, "waiters are called once");
+			Equal(SponsorLoader.RequiredLoaderResult.Ready, SponsorLoader.GetRequiredLoaderResult(), "after the main mod initialized");
+
+			SponsorLoader.AddMainLoaderWaiter(calls.Add);
+			MainLoader.PublishMainLoaderResult(ready: false);
+			Expect(calls.Count == 3 && !calls[2], "a waiter hears that the main mod failed");
+			Equal(SponsorLoader.RequiredLoaderResult.Failed, SponsorLoader.GetRequiredLoaderResult(), "after the main mod failed");
+		}
+		finally
+		{
+			AppDomain.CurrentDomain.SetData(resultKey, savedResult);
+			AppDomain.CurrentDomain.SetData(waitersKey, savedWaiters);
 		}
 	}
 
