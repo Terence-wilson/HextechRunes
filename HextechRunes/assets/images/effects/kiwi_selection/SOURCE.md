@@ -111,6 +111,18 @@ plays later. Two deliberate differences from the original:
   would show up as a half-transparent black box over the map.
 - Forge selection uses the same exit as augment selection.
 
+## Re-exporting
+
+`tools/kiwi_vfx/export_selection_vfx.py --wad <Game/DATA/FINAL/UI.wad.client>`
+rebuilds `kiwi_selection_vfx.json` and the textures from a League client and
+compares them with the repository (read-only unless `--write`). It also writes
+the raw original data used for the analysis above to `tools/kiwi_vfx/reference/`:
+`uibase.json` (every UIBase node with its rect, Layer, state lists and the scene
+transitions) and `particle_systems.json` (all 25 systems with the UI node and
+Layer that attach them, estimated duration, an emitter summary, and full data
+for the four systems the mod does not play). Run against 16.20 it reproduces
+the committed data byte for byte.
+
 ## Data format
 
 Field names follow the original `VfxEmitterDefinitionData`. Every `Value*` is
