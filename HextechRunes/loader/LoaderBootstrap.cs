@@ -91,15 +91,24 @@ public static partial class LoaderBootstrap
 			$"{LogPrefix}Host version label={host.ReleaseLabel ?? "<none>"} " +
 			$"numeric={host.Numeric?.ToString() ?? "<none>"}; picked variant {variant.CompatTarget}.");
 
-		// 拓展包的变体引用本体程序集:本体没加载就把它交给游戏,游戏扫描类型时会因找不到本体类型而崩溃。
-		// 所以等本体程序集出现再加载;本体始终没出现时拓展包只是不加载,并在主菜单提示。
-		if (RequiredAssemblyName != null && !IsAssemblyLoaded(RequiredAssemblyName))
+		// 拓展包的变体引用本体程序集,注册内容时还要用本体已初始化好的登记表:本体没初始化完就交给游戏,
+		// 游戏扫描类型会因找不到本体类型而崩溃,或者拓展包内容登记失败。所以等本体加载器报告初始化成功再加载;
+		// 本体失败或始终没加载时拓展包只是不加载,并在主菜单提示。
+		if (RequiredAssemblyName != null)
 		{
-			Log.Info($"{LogPrefix}{RequiredAssemblyName} is not loaded yet; deferring variant load until it loads.");
-			_deferredVariant = variant;
-			AppDomain.CurrentDomain.AssemblyLoad += OnRequiredAssemblyLoaded;
-			ReportLoadFailure(LoadFailureKind.RequiredModMissing);
-			return;
+			switch (GetRequiredLoaderResult())
+			{
+				case RequiredLoaderResult.Failed:
+					Log.Error($"{LogPrefix}{RequiredAssemblyName} failed to load; variant not loaded.");
+					ReportLoadFailure(LoadFailureKind.RequiredModMissing);
+					return;
+				case RequiredLoaderResult.Pending:
+					Log.Info($"{LogPrefix}{RequiredAssemblyName} is not initialized yet; deferring variant load until it is.");
+					_deferredVariant = variant;
+					AddMainLoaderWaiter(OnRequiredLoaderFinished);
+					ReportLoadFailure(LoadFailureKind.RequiredModMissing);
+					return;
+			}
 		}
 
 		LoadVariant(variant);
@@ -136,14 +145,32 @@ public static partial class LoaderBootstrap
 		}
 	}
 
-	private static void OnRequiredAssemblyLoaded(object? sender, AssemblyLoadEventArgs args)
+	internal enum RequiredLoaderResult
 	{
-		if (!string.Equals(args.LoadedAssembly.GetName().Name, RequiredAssemblyName, StringComparison.Ordinal))
+		Ready,
+		Failed,
+		Pending,
+	}
+
+	internal static RequiredLoaderResult GetRequiredLoaderResult()
+	{
+		switch (AppDomain.CurrentDomain.GetData(MainLoaderResultDataKey))
 		{
-			return;
+			case true:
+				return RequiredLoaderResult.Ready;
+			case false:
+				return RequiredLoaderResult.Failed;
 		}
 
-		AppDomain.CurrentDomain.AssemblyLoad -= OnRequiredAssemblyLoaded;
+		// 不发布结果的旧版本体加载器:模组初始化器按顺序同步执行,看到本体程序集时它的初始化已经结束。
+		return RequiredAssemblyName != null && IsAssemblyLoaded(RequiredAssemblyName)
+			? RequiredLoaderResult.Ready
+			: RequiredLoaderResult.Pending;
+	}
+
+	// 本体加载器初始化结束(成功或失败)时调用,此时仍在游戏的模组初始化循环里。
+	private static void OnRequiredLoaderFinished(bool ready)
+	{
 		VariantCandidate? variant = _deferredVariant;
 		_deferredVariant = null;
 		if (variant == null)
@@ -151,14 +178,54 @@ public static partial class LoaderBootstrap
 			return;
 		}
 
+		if (!ready)
+		{
+			Log.Error($"{LogPrefix}{RequiredAssemblyName} failed to load; variant not loaded.");
+			return;
+		}
+
 		// 初始化全部结束后再交给游戏,类型不会进入模型注册;保持未加载并照常提示。
 		if (ModManager.State != ModManagerState.None)
 		{
-			Log.Error($"{LogPrefix}{RequiredAssemblyName} loaded after mod initialization finished; variant not loaded.");
+			Log.Error($"{LogPrefix}{RequiredAssemblyName} finished after mod initialization; variant not loaded.");
 			return;
 		}
 
 		LoadVariant(variant);
+	}
+
+	internal static void AddMainLoaderWaiter(Action<bool> waiter)
+	{
+		Action<bool>? existing = AppDomain.CurrentDomain.GetData(MainLoaderWaitersDataKey) as Action<bool>;
+		AppDomain.CurrentDomain.SetData(MainLoaderWaitersDataKey, existing + waiter);
+	}
+
+	/// <summary>本体加载器公布初始化结果,并通知排在它前面、正在等待的拓展包。拓展包加载器不调用。</summary>
+	internal static void PublishMainLoaderResult(bool ready)
+	{
+		if (RequiredAssemblyName != null)
+		{
+			return;
+		}
+
+		AppDomain.CurrentDomain.SetData(MainLoaderResultDataKey, ready);
+		if (AppDomain.CurrentDomain.GetData(MainLoaderWaitersDataKey) is not Action<bool> waiters)
+		{
+			return;
+		}
+
+		AppDomain.CurrentDomain.SetData(MainLoaderWaitersDataKey, null);
+		foreach (Action<bool> waiter in waiters.GetInvocationList().Cast<Action<bool>>())
+		{
+			try
+			{
+				waiter(ready);
+			}
+			catch (Exception exception)
+			{
+				Log.Error($"{LogPrefix}A dependent loader failed while handling this mod's load result: {exception}");
+			}
+		}
 	}
 
 	private static bool IsAssemblyLoaded(string name)

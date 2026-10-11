@@ -112,6 +112,45 @@ internal static partial class Program
 		}
 	}
 
+	// 拓展包排在本体前面时登记等待回调，本体加载器初始化结束后公布结果并同步调用；拓展包加载器自己不公布。
+	// 只走不写日志的路径：加载器的 Log 在测试进程里会触碰 Godot 原生层。
+	[HextechTest]
+	private static void SponsorLoaderWaitsForMainLoaderResult()
+	{
+		const string resultKey = "HextechRunes.Loader.Result";
+		const string waitersKey = "HextechRunes.Loader.Waiters";
+		object? savedResult = AppDomain.CurrentDomain.GetData(resultKey);
+		object? savedWaiters = AppDomain.CurrentDomain.GetData(waitersKey);
+		try
+		{
+			AppDomain.CurrentDomain.SetData(resultKey, null);
+			AppDomain.CurrentDomain.SetData(waitersKey, null);
+			// 测试进程已加载本体程序集：不公布结果的旧版本体加载器按已初始化处理。
+			Equal(SponsorLoader.RequiredLoaderResult.Ready, SponsorLoader.GetRequiredLoaderResult(), "legacy main loader with its assembly loaded");
+
+			List<bool> calls = [];
+			SponsorLoader.AddMainLoaderWaiter(calls.Add);
+			SponsorLoader.AddMainLoaderWaiter(calls.Add);
+			SponsorLoader.PublishMainLoaderResult(ready: true);
+			Expect(calls.Count == 0 && AppDomain.CurrentDomain.GetData(resultKey) == null, "the sponsor loader never publishes a result");
+
+			MainLoader.PublishMainLoaderResult(ready: true);
+			Expect(calls.Count == 2 && calls.All(static ready => ready), "every waiter hears that the main mod initialized");
+			Expect(AppDomain.CurrentDomain.GetData(waitersKey) == null, "waiters are called once");
+			Equal(SponsorLoader.RequiredLoaderResult.Ready, SponsorLoader.GetRequiredLoaderResult(), "after the main mod initialized");
+
+			SponsorLoader.AddMainLoaderWaiter(calls.Add);
+			MainLoader.PublishMainLoaderResult(ready: false);
+			Expect(calls.Count == 3 && !calls[2], "a waiter hears that the main mod failed");
+			Equal(SponsorLoader.RequiredLoaderResult.Failed, SponsorLoader.GetRequiredLoaderResult(), "after the main mod failed");
+		}
+		finally
+		{
+			AppDomain.CurrentDomain.SetData(resultKey, savedResult);
+			AppDomain.CurrentDomain.SetData(waitersKey, savedWaiters);
+		}
+	}
+
 	// 稳定哈希的历史结果必须逐位不变(神迹事件、附魔大师的存档与联机两端都依赖它)。golden 值由已删除的
 	// 拓展包 SponsorStableRandom(0.9.x 起在用)实际算出并核对过,算法:FNV-1a(64) over seed|act:|floor:|("|" + salt)... + MurmurHash3 终混。
 	[HextechTest]

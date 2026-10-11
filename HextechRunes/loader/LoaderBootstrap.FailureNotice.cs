@@ -26,8 +26,10 @@ public static partial class LoaderBootstrap
 	// 智能应用控制 / WDAC 拦截未签名 DLL 时 FileLoadException 带的就是它。
 	private const int ApplicationControlBlockedHResult = unchecked((int)0x800711C7);
 
-	// 本体失败时由本体弹窗;拓展包看到这个标记就不再重复弹。两个加载器在同一进程,用 AppDomain 数据交换。
-	private const string MainLoaderFailedDataKey = "HextechRunes.Loader.Failed";
+	// 两个加载器在同一进程,用 AppDomain 数据交换。本体公布初始化结果(true 成功 / false 失败,未公布为 null):
+	// 失败时由本体弹窗,拓展包不再重复弹;拓展包排在本体前面时,把等待回调放进 Waiters,由本体初始化结束后调用。
+	private const string MainLoaderResultDataKey = "HextechRunes.Loader.Result";
+	private const string MainLoaderWaitersDataKey = "HextechRunes.Loader.Waiters";
 
 	private const string FailureNoticeHarmonyId = "Natsuki." + ModId + ".Loader.FailureNotice";
 
@@ -134,10 +136,7 @@ public static partial class LoaderBootstrap
 	private static void ReportLoadFailure(LoadFailureKind kind)
 	{
 		_loadFailure = kind;
-		if (RequiredAssemblyName == null)
-		{
-			AppDomain.CurrentDomain.SetData(MainLoaderFailedDataKey, true);
-		}
+		PublishMainLoaderResult(ready: false);
 
 		if (_failureNoticePatched)
 		{
@@ -160,10 +159,7 @@ public static partial class LoaderBootstrap
 	private static void ClearLoadFailure()
 	{
 		_loadFailure = null;
-		if (RequiredAssemblyName == null)
-		{
-			AppDomain.CurrentDomain.SetData(MainLoaderFailedDataKey, null);
-		}
+		PublishMainLoaderResult(ready: true);
 	}
 
 	private static void MainMenuReadyPostfix()
@@ -175,7 +171,7 @@ public static partial class LoaderBootstrap
 
 		// 本体已经弹过窗说明了,拓展包不再追加一个。
 		if (kind == LoadFailureKind.RequiredModMissing
-			&& AppDomain.CurrentDomain.GetData(MainLoaderFailedDataKey) is true)
+			&& AppDomain.CurrentDomain.GetData(MainLoaderResultDataKey) is false)
 		{
 			return;
 		}
