@@ -41,7 +41,7 @@
 - **接二连三在 `ModifyCardPlayCount` 里看本张牌这一系列打出（c+1 … c+playCount）是否跨过 3 的倍数，跨过就追加一次；追加的那次也计数（会自我加速，已接受）。** 原版 `GeneratePlayCount` 在第一次打出前一次性算出总次数，`Hook.ModifyCardPlayCount` 按监听者顺序累加，0.111.0 没有 Late 版本：持有者身上的 Power 都排在遗物之前，同一玩家的遗物按获得顺序。所以比接二连三晚获得的双刀流等 +1 它看不到（计数 1 时先有双刀流：看到 2 次、追加，共打出 3 次；后有双刀流：看到 1 次、不追加，共 2 次），这些额外打出只在事后推进计数。不为此拦截 Hook 分发或复刻监听者求值。`TwiceThriceRune`
 - **愈战愈勇与大法师的"随机一张手牌本回合免费"按原版木乃伊之手（`MummifiedHand`）的分级挑选：基础费 > 0 且计入全局修正后仍要花费 → 计入全局修正后仍要花费 → 基础费 > 0 → 任意手牌。** 愈战愈勇原先只看本地费用，会挑中已被三头犬、奇巧许可、剑意等全局修正变成 0 费的牌而浪费免费；X 费按原版 `CostsEnergyOrStars` 口径不进前两级。两者共用 `HextechFreeCardPicker`，各自的稳定随机键不变（分级名进键；愈战愈勇的分级名由 base/global 改为共享的四级名，同一局面的随机结果可能与旧版本不同）。`GrowingStrongerRune`、`ArchmageRune`
 - **储君海克斯（无瑕、三棱镜、空白支票）判定"无色牌"与原版传家宝锤相同：`VisualCardPool.IsColorless`。** 君王之剑、仆从牌、小刀等衍生牌、事件牌都算无色，不再维护模组自己的名单；第三方卡池按其自身的 `IsColorless`。`HextechColorlessCardHelper`
-- **属性转换类符文（敏捷转力量、力量转敏捷、亮出你的剑、敏捷力量转集中）只认原版施加管线登记过的那次施加。** 原版 `PowerCmd.Apply` / `ModifyAmount` 先调 `BeforePowerAmountChanged` 再问接收修正，传同一个能力实例，随机数预测不调本模组的 Before 钩子；登记的实例在接收修正里记下待转换量后立即撤销登记，原版在 After 回调前那段 0.1–0.25 秒的等待里，模拟调用改写不了它。查询本身照常返回 0，预览结果不变。`AttributeConversionRelicBase`
+- **属性转换类符文（敏捷转力量、力量转敏捷、亮出你的剑、敏捷力量转集中）只认原版施加管线登记过的那次施加。** 原版 `PowerCmd.Apply` / `ModifyAmount` 先调 `BeforePowerAmountChanged` 再问接收修正，传同一个能力实例，随机数预测不调本模组的 Before 钩子；登记按后进先出存放（施加可能嵌套），接收修正遇到登记过的实例就消费掉——即使前面的修正器（如人工制品）已把接收量改成 0；原版在 After 回调前那段 0.1–0.25 秒的等待里，模拟调用改写不了已记下的待转换量。查询本身照常返回 0，预览结果不变。`AttributeConversionRelicBase`
 
 ## 敌方海克斯
 

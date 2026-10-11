@@ -81,6 +81,22 @@ internal static partial class Program
 		Equal<decimal?>(3m, (decimal?)pending.GetValue(rune), "the registered application records the amount");
 		rune.TryModifyPowerAmountReceived(dexterity, owner.Creature, -1m, null, out _);
 		Equal<decimal?>(3m, (decimal?)pending.GetValue(rune), "a simulated call during the wait cannot overwrite it");
+		pending.SetValue(rune, null);
+
+		// 前面的修正器（如人工制品）把接收量改成 0：登记照样消费，之后的模拟调用不能借它写入。
+		rune.BeforePowerAmountChanged(dexterity, -2m, owner.Creature, null, null).GetAwaiter().GetResult();
+		Expect(!rune.TryModifyPowerAmountReceived(dexterity, owner.Creature, 0m, null, out _), "nothing to convert after artifact");
+		rune.TryModifyPowerAmountReceived(dexterity, owner.Creature, -2m, null, out _);
+		Expect(pending.GetValue(rune) == null, "a zeroed real application leaves no registration behind");
+
+		// 嵌套施加：外层登记后，Before 监听者里又对同一实例施加，内外两次各自记下自己的量。
+		rune.BeforePowerAmountChanged(dexterity, 4m, owner.Creature, owner.Creature, null).GetAwaiter().GetResult();
+		rune.BeforePowerAmountChanged(dexterity, 1m, owner.Creature, owner.Creature, null).GetAwaiter().GetResult();
+		rune.TryModifyPowerAmountReceived(dexterity, owner.Creature, 1m, owner.Creature, out _);
+		Equal<decimal?>(1m, (decimal?)pending.GetValue(rune), "the nested application records its own amount");
+		pending.SetValue(rune, null);
+		rune.TryModifyPowerAmountReceived(dexterity, owner.Creature, 4m, owner.Creature, out _);
+		Equal<decimal?>(4m, (decimal?)pending.GetValue(rune), "the outer application still records after the nested one");
 	}
 
 	[HextechTest]
