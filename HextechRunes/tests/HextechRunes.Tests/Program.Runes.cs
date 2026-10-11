@@ -25,34 +25,111 @@ namespace HextechRunes.Tests;
 
 internal static partial class Program
 {
+	// 「我饥饿」只数同步出牌记录：预览（牌不在历史里、未结算）与真正结算（本次已记入历史）得到同一结果，
+	// 反复调用也不改变结果；重放、自动打出、能力牌与队友的牌不计数（#22）。
 	[HextechTest]
-	private static void HungryExhaustsZeroOneOrTwoCardsByTier()
+	private static void HungryCountsEarlierPlaysFromHistoryWithoutSideEffects()
 	{
-		HextechMayhemCombatTrackingState tracking = new();
-		Expect(!EightPennyGateEnemyHex.TryConsumeExhaustSlot(tracking, 1, 0), "tier one should exhaust no cards");
-		Expect(EightPennyGateEnemyHex.TryConsumeExhaustSlot(tracking, 2, 1), "tier two should exhaust the first card");
-		Expect(!EightPennyGateEnemyHex.TryConsumeExhaustSlot(tracking, 2, 1), "tier two should not exhaust the second card");
-		Expect(EightPennyGateEnemyHex.TryConsumeExhaustSlot(tracking, 3, 2), "tier three should exhaust the first card");
-		Expect(EightPennyGateEnemyHex.TryConsumeExhaustSlot(tracking, 3, 2), "tier three should exhaust the second card");
-		Expect(!EightPennyGateEnemyHex.TryConsumeExhaustSlot(tracking, 3, 2), "tier three should not exhaust the third card");
+		Player owner = CreateOrdinalTestPlayer(1);
+		Player teammate = CreateOrdinalTestPlayer(2);
+		StrikeIronclad first = CreateMutableTestModel<StrikeIronclad>();
+		first.Owner = owner;
+		StrikeIronclad second = CreateMutableTestModel<StrikeIronclad>();
+		second.Owner = owner;
+		Inflame power = CreateMutableTestModel<Inflame>();
+		power.Owner = owner;
+		StrikeIronclad teammateStrike = CreateMutableTestModel<StrikeIronclad>();
+		teammateStrike.Owner = teammate;
+
+		List<CardPlay> history = [];
+		Equal(0, EightPennyGateEnemyHex.CountEarlierCountedPlays(history, owner), "first card of the turn");
+		Equal(0, EightPennyGateEnemyHex.CountEarlierCountedPlays(history, owner), "asking again does not consume anything");
+
+		// 原版先问去向再进出牌循环：first 被双重释放打两次的两条记录都在之后才写入。
+		history.Add(CreateCardPlay(first, playIndex: 0, playCount: 2, isAutoPlay: false));
+		history.Add(CreateCardPlay(first, playIndex: 1, playCount: 2, isAutoPlay: false));
+		history.Add(CreateCardPlay(power, playIndex: 0, playCount: 1, isAutoPlay: false));
+		history.Add(CreateCardPlay(teammateStrike, playIndex: 0, playCount: 1, isAutoPlay: false));
+		history.Add(CreateCardPlay(second, playIndex: 0, playCount: 1, isAutoPlay: true));
+		Equal(1, EightPennyGateEnemyHex.CountEarlierCountedPlays(history, owner),
+			"replays, powers, auto-plays and the teammate do not count");
+		Equal(1, EightPennyGateEnemyHex.CountEarlierCountedPlays(history, teammate), "the teammate counts only their own plays");
+
+		history.Add(CreateCardPlay(second, playIndex: 0, playCount: 1, isAutoPlay: false));
+		Equal(2, EightPennyGateEnemyHex.CountEarlierCountedPlays(history, owner),
+			"a card that returned to hand and is played again counts its earlier play");
+	}
+
+	// 属性转换的接收修正是查询钩子：原版施加管线没有先登记（BeforePowerAmountChanged）的调用只返回结果、不记待转换量；
+	// 登记过的那一次记下后立即撤销登记，之后的模拟调用改写不了它。
+	[HextechTest]
+	private static void AttributeConversionRecordsOnlyTheRegisteredApplication()
+	{
+		(HextechEnemyHexContext _, Player owner, Player _) = CreatePrismaticEnemyFixture();
+		DexterityToStrengthRune rune = CreateMutableTestModel<DexterityToStrengthRune>();
+		rune.Owner = owner;
+		FieldInfo pending = AccessTools.Field(typeof(AttributeConversionRelicBase), "_pendingAmount");
+		DexterityPower dexterity = CreateMutableTestModel<DexterityPower>();
+
+		Expect(rune.TryModifyPowerAmountReceived(dexterity, owner.Creature, 2m, owner.Creature, out decimal previewed) && previewed == 0m,
+			"an unregistered call still predicts the conversion");
+		Expect(pending.GetValue(rune) == null, "an unregistered call records nothing");
+
+		rune.BeforePowerAmountChanged(dexterity, 3m, owner.Creature, owner.Creature, null).GetAwaiter().GetResult();
+		Expect(rune.TryModifyPowerAmountReceived(dexterity, owner.Creature, 3m, owner.Creature, out decimal applied) && applied == 0m,
+			"the registered application converts");
+		Equal<decimal?>(3m, (decimal?)pending.GetValue(rune), "the registered application records the amount");
+		rune.TryModifyPowerAmountReceived(dexterity, owner.Creature, -1m, null, out _);
+		Equal<decimal?>(3m, (decimal?)pending.GetValue(rune), "a simulated call during the wait cannot overwrite it");
+		pending.SetValue(rune, null);
+
+		// 前面的修正器（如人工制品）把接收量改成 0：登记照样消费，之后的模拟调用不能借它写入。
+		rune.BeforePowerAmountChanged(dexterity, -2m, owner.Creature, null, null).GetAwaiter().GetResult();
+		Expect(!rune.TryModifyPowerAmountReceived(dexterity, owner.Creature, 0m, null, out _), "nothing to convert after artifact");
+		rune.TryModifyPowerAmountReceived(dexterity, owner.Creature, -2m, null, out _);
+		Expect(pending.GetValue(rune) == null, "a zeroed real application leaves no registration behind");
+
+		// 嵌套施加：外层登记后，Before 监听者里又对同一实例施加，内外两次各自记下自己的量。
+		rune.BeforePowerAmountChanged(dexterity, 4m, owner.Creature, owner.Creature, null).GetAwaiter().GetResult();
+		rune.BeforePowerAmountChanged(dexterity, 1m, owner.Creature, owner.Creature, null).GetAwaiter().GetResult();
+		rune.TryModifyPowerAmountReceived(dexterity, owner.Creature, 1m, owner.Creature, out _);
+		Equal<decimal?>(1m, (decimal?)pending.GetValue(rune), "the nested application records its own amount");
+		pending.SetValue(rune, null);
+		rune.TryModifyPowerAmountReceived(dexterity, owner.Creature, 4m, owner.Creature, out _);
+		Equal<decimal?>(4m, (decimal?)pending.GetValue(rune), "the outer application still records after the nested one");
 	}
 
 	[HextechTest]
 	private static void InspectBlocksOnlyTheConfiguredExtraDrawTriggers()
 	{
 		HextechMayhemCombatTrackingState tracking = new();
-		Expect(!IInspectEnemyHex.TryPreventExtraDraw(tracking, 1, 2, fromHandDraw: true), "normal hand draw should never be blocked");
-		Expect(!IInspectEnemyHex.TryPreventExtraDraw(tracking, 1, 0, fromHandDraw: false), "tier one should block no extra draws");
+		// 查询只读，真实拦下之后才记账（AfterPreventingDraw）。
+		bool Prevent(ulong playerId, int limit, bool fromHandDraw)
+		{
+			bool prevent = IInspectEnemyHex.ShouldPreventExtraDraw(tracking, playerId, limit, fromHandDraw);
+			if (prevent)
+			{
+				IInspectEnemyHex.RecordPreventedExtraDraw(tracking, playerId);
+			}
+
+			return prevent;
+		}
+
+		Expect(!Prevent(1, 2, fromHandDraw: true), "normal hand draw should never be blocked");
+		Expect(!Prevent(1, 0, fromHandDraw: false), "tier one should block no extra draws");
 
 		tracking.BeginPlayerTurnStart([2]);
-		Expect(!IInspectEnemyHex.TryPreventExtraDraw(tracking, 2, 1, fromHandDraw: false), "turn-start extra draw should never be blocked");
+		Expect(!Prevent(2, 1, fromHandDraw: false), "turn-start extra draw should never be blocked");
 		Equal(0, tracking.InspectExtraDrawsPreventedThisTurn.Count, "turn-start draw should not consume an inspect trigger");
 		tracking.EnterPlayerPlayPhase(2);
-		Expect(IInspectEnemyHex.TryPreventExtraDraw(tracking, 2, 1, fromHandDraw: false), "tier two should block the first in-turn extra draw trigger");
-		Expect(!IInspectEnemyHex.TryPreventExtraDraw(tracking, 2, 1, fromHandDraw: false), "tier two should allow the second in-turn extra draw trigger");
-		Expect(IInspectEnemyHex.TryPreventExtraDraw(tracking, 3, 2, fromHandDraw: false), "tier three should block the first extra draw trigger");
-		Expect(IInspectEnemyHex.TryPreventExtraDraw(tracking, 3, 2, fromHandDraw: false), "tier three should block the second extra draw trigger");
-		Expect(!IInspectEnemyHex.TryPreventExtraDraw(tracking, 3, 2, fromHandDraw: false), "tier three should allow the third extra draw trigger");
+		Expect(IInspectEnemyHex.ShouldPreventExtraDraw(tracking, 2, 1, fromHandDraw: false), "query before the real draw");
+		Expect(IInspectEnemyHex.ShouldPreventExtraDraw(tracking, 2, 1, fromHandDraw: false), "repeated queries do not consume the trigger");
+		Equal(0, tracking.InspectExtraDrawsPreventedThisTurn.Count, "querying alone records nothing");
+		Expect(Prevent(2, 1, fromHandDraw: false), "tier two should block the first in-turn extra draw trigger");
+		Expect(!Prevent(2, 1, fromHandDraw: false), "tier two should allow the second in-turn extra draw trigger");
+		Expect(Prevent(3, 2, fromHandDraw: false), "tier three should block the first extra draw trigger");
+		Expect(Prevent(3, 2, fromHandDraw: false), "tier three should block the second extra draw trigger");
+		Expect(!Prevent(3, 2, fromHandDraw: false), "tier three should allow the third extra draw trigger");
 
 		string serialized = tracking.Serialize();
 		HextechMayhemCombatTrackingState restored = new();

@@ -54,6 +54,11 @@ internal abstract class HextechEnemyHexEffect
 		return true;
 	}
 
+	// 只在 Mayhem 拦下一次真实抽牌之后调用（见 HextechMayhemModifier.AfterPreventingDraw）；ShouldDraw 本身只读。
+	internal virtual void AfterPreventingDraw(HextechEnemyHexContext context, Player player, bool fromHandDraw)
+	{
+	}
+
 	internal virtual bool ShouldPlay(HextechEnemyHexContext context, CardModel card, AutoPlayType autoPlayType)
 	{
 		return true;

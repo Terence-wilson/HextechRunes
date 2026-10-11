@@ -4,37 +4,48 @@ internal sealed class IInspectEnemyHex : HextechEnemyHexEffect
 {
 	internal override MonsterHexKind Kind => MonsterHexKind.IInspect;
 
+	// 只读：抽牌查询可能在真实抽牌之外被调用，已阻止次数在 AfterPreventingDraw 里记。
 	internal override bool ShouldDraw(HextechEnemyHexContext context, Player player, bool fromHandDraw)
 	{
-		if (player.Creature.Side != CombatSide.Player
-			|| player.Creature.IsDead
-			|| player.Creature.CombatState?.RunState != context.RunState)
-		{
-			return true;
-		}
-
-		int limit = context.TierValue(Kind, 0, 1, 2);
-		return !TryPreventExtraDraw(context.Tracking, player.NetId, limit, fromHandDraw);
+		return !IsActiveFor(context, player)
+			|| !ShouldPreventExtraDraw(context.Tracking, player.NetId, Limit(context), fromHandDraw);
 	}
 
-	internal static bool TryPreventExtraDraw(
+	internal override void AfterPreventingDraw(HextechEnemyHexContext context, Player player, bool fromHandDraw)
+	{
+		if (IsActiveFor(context, player)
+			&& ShouldPreventExtraDraw(context.Tracking, player.NetId, Limit(context), fromHandDraw))
+		{
+			RecordPreventedExtraDraw(context.Tracking, player.NetId);
+		}
+	}
+
+	internal static bool ShouldPreventExtraDraw(
 		HextechMayhemCombatTrackingState tracking,
 		ulong playerId,
 		int limit,
 		bool fromHandDraw)
 	{
-		if (fromHandDraw || tracking.IsPlayerTurnStart(playerId) || limit <= 0)
-		{
-			return false;
-		}
+		return !fromHandDraw
+			&& !tracking.IsPlayerTurnStart(playerId)
+			&& limit > 0
+			&& tracking.InspectExtraDrawsPreventedThisTurn.GetValueOrDefault(playerId) < limit;
+	}
 
-		int prevented = tracking.InspectExtraDrawsPreventedThisTurn.GetValueOrDefault(playerId);
-		if (prevented >= limit)
-		{
-			return false;
-		}
+	internal static void RecordPreventedExtraDraw(HextechMayhemCombatTrackingState tracking, ulong playerId)
+	{
+		tracking.InspectExtraDrawsPreventedThisTurn[playerId] = tracking.InspectExtraDrawsPreventedThisTurn.GetValueOrDefault(playerId) + 1;
+	}
 
-		tracking.InspectExtraDrawsPreventedThisTurn[playerId] = prevented + 1;
-		return true;
+	private static bool IsActiveFor(HextechEnemyHexContext context, Player player)
+	{
+		return player.Creature.Side == CombatSide.Player
+			&& !player.Creature.IsDead
+			&& player.Creature.CombatState?.RunState == context.RunState;
+	}
+
+	private int Limit(HextechEnemyHexContext context)
+	{
+		return context.TierValue(Kind, 0, 1, 2);
 	}
 }

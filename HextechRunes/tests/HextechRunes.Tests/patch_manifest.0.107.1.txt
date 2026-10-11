@@ -16,6 +16,7 @@ card.self-upgrade.save | MegaCrit.Sts2.Core.Models.CardModel.ToSerializable() | 
 card.starter-upgrade.load | MegaCrit.Sts2.Core.Models.CardModel.FromSerializable(SerializableCard) | finalizer(400) prefix(400)
 card.starter-upgrade.max-level | MegaCrit.Sts2.Core.Models.CardModel.MaxUpgradeLevel(*) [Getter] | postfix(400)
 combat.damage-command | MegaCrit.Sts2.Core.Commands.CreatureCmd.Damage(PlayerChoiceContext,IEnumerable`1,Decimal,ValueProp,Creature,CardModel) | finalizer(400) postfix(400) prefix(400)
+combat.damage-command-state-notify | MegaCrit.Sts2.Core.Combat.CombatStateTracker.NotifyCombatStateChanged(*) | finalizer(400) postfix(400) prefix(400)
 combat.die-for-you.target | MegaCrit.Sts2.Core.Models.Powers.DieForYouPower.ModifyUnblockedDamageTarget(Creature,Decimal,ValueProp,Creature) | postfix(400)
 combat.draw | MegaCrit.Sts2.Core.Commands.CardPileCmd.Draw(PlayerChoiceContext,Decimal,Player,Boolean) | prefix?(200)
 combat.dual-wield.attack | MegaCrit.Sts2.Core.Commands.Builders.AttackCommand.Execute(PlayerChoiceContext) | prefix(400)
