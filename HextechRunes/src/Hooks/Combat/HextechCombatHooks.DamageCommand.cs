@@ -102,4 +102,44 @@ internal static partial class HextechCombatHooks
 			return __exception;
 		}
 	}
+
+	// 原版在伤害命令内部扣血、改能力层数时会发"战斗状态变化"通知，它启动的延迟任务捕获当前执行上下文，
+	// 下一帧带着本命令的 ID 调用 CombatStateChanged 的订阅者。随机数预测在这个订阅里用真实生物模拟回合结束，
+	// 代偿、滑溜等只在真实伤害命令里记账的查询钩子会把模拟当成本次结算，只在本机多记一笔（#22 同类问题）。
+	// 启动延迟任务前清空作用域、同步返回前恢复：通知本身是同步方法，Prefix 与 Postfix 在同一个上下文里执行。
+	[HarmonyPatch(typeof(CombatStateTracker), "NotifyCombatStateChanged")]
+	[HextechPatch("combat.damage-command-state-notify", "伤害命令作用域不带进战斗状态通知")]
+	private static class CombatStateNotifyScopePatch
+	{
+		[HarmonyPrefix]
+		private static void Prefix(out long[]? __state)
+		{
+			__state = ActualDamageCommandIds.Value;
+			if (__state != null)
+			{
+				ActualDamageCommandIds.Value = null;
+			}
+		}
+
+		[HarmonyPostfix]
+		private static void Postfix(ref long[]? __state)
+		{
+			if (__state != null)
+			{
+				ActualDamageCommandIds.Value = __state;
+				__state = null;
+			}
+		}
+
+		[HarmonyFinalizer]
+		private static Exception? Finalizer(long[]? __state, Exception? __exception)
+		{
+			if (__exception != null && __state != null)
+			{
+				ActualDamageCommandIds.Value = __state;
+			}
+
+			return __exception;
+		}
+	}
 }

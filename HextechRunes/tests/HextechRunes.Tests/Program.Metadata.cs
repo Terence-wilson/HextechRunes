@@ -46,8 +46,6 @@ internal static partial class Program
 		tracking.FinalFormTriggeredThisTurn.Add(7);
 		tracking.EnemyPorcupineUnblockedHitsThisCombat[8] = 2;
 		tracking.EnemyHundredRefinementsUnblockedHitsThisCombat[8] = 1;
-		tracking.EightPennyGatePlayersTriggeredThisTurn.Add(9);
-		tracking.EightPennyGatePlayersTriggeredSecondThisTurn.Add(10);
 		tracking.InspectExtraDrawsPreventedThisTurn[11] = 2;
 		tracking.GripPlayersTriggeredThisTurn.Add(12);
 
@@ -55,8 +53,6 @@ internal static partial class Program
 
 		Equal(1, tracking.ClownCollegeProcsThisTurn.Count, "player side end should keep clown college round proc count");
 		Equal(1, tracking.EnemyPorcupineUnblockedHitsThisCombat.Count, "player side end should keep porcupine hit count");
-		Equal(1, tracking.EightPennyGatePlayersTriggeredThisTurn.Count, "player side end should keep eight penny gate first round proc count");
-		Equal(1, tracking.EightPennyGatePlayersTriggeredSecondThisTurn.Count, "player side end should keep eight penny gate second round proc count");
 		Equal(1, tracking.InspectExtraDrawsPreventedThisTurn.Count, "player side end should keep inspect draw count");
 		Equal(1, tracking.GripPlayersTriggeredThisTurn.Count, "player side end should keep grip proc count");
 
@@ -71,8 +67,6 @@ internal static partial class Program
 		Equal(1, tracking.DevilsDanceTriggeredThisTurn.Count, "enemy side start should keep devil's dance round proc count");
 		Equal(1, tracking.FinalFormTriggeredThisTurn.Count, "enemy side start should keep final form round proc count");
 		Equal(1, tracking.EnemyPorcupineUnblockedHitsThisCombat.Count, "enemy side start should keep porcupine hit count");
-		Equal(1, tracking.EightPennyGatePlayersTriggeredThisTurn.Count, "enemy side start should keep eight penny gate first round proc count");
-		Equal(1, tracking.EightPennyGatePlayersTriggeredSecondThisTurn.Count, "enemy side start should keep eight penny gate second round proc count");
 		Equal(1, tracking.InspectExtraDrawsPreventedThisTurn.Count, "enemy side start should keep inspect draw count");
 		Equal(1, tracking.GripPlayersTriggeredThisTurn.Count, "enemy side start should keep grip proc count");
 
@@ -93,8 +87,6 @@ internal static partial class Program
 		Equal(0, tracking.FinalFormTriggeredThisTurn.Count, "player side start should reset final form round proc count");
 		Equal(1, tracking.EnemyPorcupineUnblockedHitsThisCombat.Count, "porcupine hit count carries across turns");
 		Equal(1, tracking.EnemyHundredRefinementsUnblockedHitsThisCombat.Count, "hundred refinements hit count carries across turns");
-		Equal(0, tracking.EightPennyGatePlayersTriggeredThisTurn.Count, "player side start should reset eight penny gate first round proc count");
-		Equal(0, tracking.EightPennyGatePlayersTriggeredSecondThisTurn.Count, "player side start should reset eight penny gate second round proc count");
 		Equal(0, tracking.InspectExtraDrawsPreventedThisTurn.Count, "player side start should reset inspect draw count");
 		Equal(0, tracking.GripPlayersTriggeredThisTurn.Count, "player side start should reset grip proc count");
 	}

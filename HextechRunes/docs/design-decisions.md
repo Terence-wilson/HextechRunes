@@ -41,6 +41,7 @@
 - **接二连三在 `ModifyCardPlayCount` 里看本张牌这一系列打出（c+1 … c+playCount）是否跨过 3 的倍数，跨过就追加一次；追加的那次也计数（会自我加速，已接受）。** 原版 `GeneratePlayCount` 在第一次打出前一次性算出总次数，`Hook.ModifyCardPlayCount` 按监听者顺序累加，0.111.0 没有 Late 版本：持有者身上的 Power 都排在遗物之前，同一玩家的遗物按获得顺序。所以比接二连三晚获得的双刀流等 +1 它看不到（计数 1 时先有双刀流：看到 2 次、追加，共打出 3 次；后有双刀流：看到 1 次、不追加，共 2 次），这些额外打出只在事后推进计数。不为此拦截 Hook 分发或复刻监听者求值。`TwiceThriceRune`
 - **愈战愈勇与大法师的"随机一张手牌本回合免费"按原版木乃伊之手（`MummifiedHand`）的分级挑选：基础费 > 0 且计入全局修正后仍要花费 → 计入全局修正后仍要花费 → 基础费 > 0 → 任意手牌。** 愈战愈勇原先只看本地费用，会挑中已被三头犬、奇巧许可、剑意等全局修正变成 0 费的牌而浪费免费；X 费按原版 `CostsEnergyOrStars` 口径不进前两级。两者共用 `HextechFreeCardPicker`，各自的稳定随机键不变（分级名进键；愈战愈勇的分级名由 base/global 改为共享的四级名，同一局面的随机结果可能与旧版本不同）。`GrowingStrongerRune`、`ArchmageRune`
 - **储君海克斯（无瑕、三棱镜、空白支票）判定"无色牌"与原版传家宝锤相同：`VisualCardPool.IsColorless`。** 君王之剑、仆从牌、小刀等衍生牌、事件牌都算无色，不再维护模组自己的名单；第三方卡池按其自身的 `IsColorless`。`HextechColorlessCardHelper`
+- **属性转换类符文（敏捷转力量、力量转敏捷、亮出你的剑、敏捷力量转集中）只认原版施加管线登记过的那次施加。** 原版 `PowerCmd.Apply` / `ModifyAmount` 先调 `BeforePowerAmountChanged` 再问接收修正，传同一个能力实例，随机数预测不调本模组的 Before 钩子；登记的实例在接收修正里记下待转换量后立即撤销登记，原版在 After 回调前那段 0.1–0.25 秒的等待里，模拟调用改写不了它。查询本身照常返回 0，预览结果不变。`AttributeConversionRelicBase`
 
 ## 敌方海克斯
 
@@ -67,6 +68,9 @@
 - **八文门“每回合最多 2 次”保留两个 HashSet。** 它们参与战斗快照序列化，改成字典需要迁移旧 JSON，收益太小。
 - **敌方"开悟"用专属图标载体 `EnlightenmentHex`（棱彩），玩家符文"开悟"仍是 `EnlightenmentRune`（黄金、原图标）；不再被读取的 `enlightenmentRune.enemyDescription` 已删除（同感染棱柱先例）。** 敌方海克斯按 `MonsterHexKind` 编号存档与同步（`SavedMonsterHexByAct`/`SavedMonsterHexesByActJson`/`SavedCarriedMonsterHexes` 与选择消息都是 int），换展示载体不影响旧存档读回；新载体追加在 `EnemyHexIconRelicTypes` 末尾，保持既有载体的 SharedRelicPool 登记顺序。新增模型改变模型表，两端须同版本。`EnlightenmentHex`、`HextechMonsterHexRegistry`
 - **敌方 `MonsterHexKind.MadScientist` 重做为"升级：蜂群术士"：敌人减少 30/15/0% 最大生命值，并获得 1 层原版人体蜂房（`PersonalHivePower`）；删除自定义的"受到伤害时往弃牌堆加晕眩"。** 晕眩改由原版能力结算（只认攻击伤害，加到攻击者抽牌堆随机位置，奥斯提的攻击归到主人），旧实现里单人/联机归属晕眩的差异随之消失。人体蜂房与最大生命减少共用同一持久标记 `MadScientistApplied`（开战时所有敌人、战斗中召唤/分裂出的敌人各一次，首领转阶段随最大生命重放），直接 `PowerCmd.Apply`：原版不按人数缩放它，固定 1 层。原版蜂群术士自带 1 层，叠加为 2 层，其吐丝招式在不足 3 层时照常 +1（提前一回合到 3 层上限）；0.107.1 的吐丝兼容补丁只在没有人体蜂房时接管，不受影响；人体蜂房在薄暮法衣的不可镜像名单里，玩家侧实例由安全补丁吞掉。图标载体改为敌方专用 `EntomancerHex`（追加在 `EnemyHexIconRelicTypes` 末尾，暂借 `madScientistRune.png`），玩家符文科学狂人（`MadScientistRune`）不变；不再被读取的 `madScientistRune.enemyDescription` 已删除。枚举成员名与编号保留为配置禁用列表、遥测与存档的兼容契约。`MadScientistEnemyHex`、`EntomancerHex`
+- **「我饥饿」的消耗名额不记账，每次从 `CombatManager.History.CardPlaysFinished` 数本回合该玩家已手动打出的非能力牌（重放只算第一次）。** 原版 0.107.1–0.111.0 都在进入出牌循环前问去向，此时本次出牌尚未记入历史，真实结算与预览数到同一个值；旧实现在去向钩子里记账，被随机数预测的悬停预览占掉名额导致联机分歧（#22）。`EightPennyGateEnemyHex`
+- **「我细看」的已阻止次数在 `AfterPreventingDraw` 里记，`ShouldDraw` 只读。** 原版钩子不带玩家参数，由 Mayhem 在 `ShouldDraw` 里记下最近一次拦下的玩家；原版 `CardPileCmd.Draw` 与 `HextechSelectedDrawHelper` 都在查询返回 false 后同步紧接着调 After，中间没有等待。`HextechMayhemModifier.CombatModifiers`、`IInspectEnemyHex`
+- **原版"战斗状态变化"通知不继承伤害命令作用域。** 它在伤害命令内部启动延迟任务，下一帧带着命令 ID 调订阅者，随机数预测在订阅里模拟回合结束，代偿（我方/敌方）、滑溜、穿针引线这些按命令 ID 记账的查询钩子会把模拟记成真实结算。补丁在同步的 `NotifyCombatStateChanged` 入口清空、返回前恢复。`HextechCombatHooks.CombatStateNotifyScopePatch`
 
 ## 卡牌升级
 

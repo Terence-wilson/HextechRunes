@@ -123,6 +123,50 @@ internal static partial class Program
 		return depth.Value;
 	}
 
+	// 原版战斗状态通知启动的延迟任务（随机数预测等模组在它的订阅里模拟出牌和伤害）不能继承伤害命令作用域，
+	// 否则代偿、滑溜等只在真实伤害命令里记账的查询钩子会把模拟记成真实结算；通知返回后调用方的作用域原样恢复。
+	[HextechTest]
+	private static void CombatStateNotifyDoesNotCarryDamageCommandScope()
+	{
+		MethodInfo damagePrefix = FindPatchMethod(typeof(HextechCombatHooks), "DamageCommandPatch", "Prefix")
+			?? throw new MissingMethodException("DamageCommandPatch.Prefix");
+		MethodInfo damageFinalizer = FindPatchMethod(typeof(HextechCombatHooks), "DamageCommandPatch", "Finalizer")
+			?? throw new MissingMethodException("DamageCommandPatch.Finalizer");
+		MethodInfo notifyPrefix = FindPatchMethod(typeof(HextechCombatHooks), "CombatStateNotifyScopePatch", "Prefix")
+			?? throw new MissingMethodException("CombatStateNotifyScopePatch.Prefix");
+		MethodInfo notifyPostfix = FindPatchMethod(typeof(HextechCombatHooks), "CombatStateNotifyScopePatch", "Postfix")
+			?? throw new MissingMethodException("CombatStateNotifyScopePatch.Postfix");
+		MethodInfo notifyFinalizer = FindPatchMethod(typeof(HextechCombatHooks), "CombatStateNotifyScopePatch", "Finalizer")
+			?? throw new MissingMethodException("CombatStateNotifyScopePatch.Finalizer");
+
+		static async Task<long> ReadCommandIdLater()
+		{
+			await Task.Yield();
+			return HextechCombatHooks.CurrentActualDamageCommandId;
+		}
+
+		object?[] damageState = [0L];
+		damagePrefix.Invoke(null, damageState);
+		long commandId = HextechCombatHooks.CurrentActualDamageCommandId;
+		Expect(commandId != 0L, "inside a damage command");
+
+		object?[] notifyState = [null];
+		notifyPrefix.Invoke(null, notifyState);
+		Task<long> deferred = ReadCommandIdLater();
+		notifyPostfix.Invoke(null, notifyState);
+		Equal(commandId, HextechCombatHooks.CurrentActualDamageCommandId, "the damage command keeps its scope after the notification");
+		Equal(0L, deferred.GetAwaiter().GetResult(), "the deferred notification task does not see the damage command");
+
+		InvalidOperationException failure = new("synchronous failure inside the notification");
+		notifyPrefix.Invoke(null, notifyState);
+		Equal(0L, HextechCombatHooks.CurrentActualDamageCommandId, "the notification runs outside the damage command");
+		notifyFinalizer.Invoke(null, [notifyState[0], failure]);
+		Equal(commandId, HextechCombatHooks.CurrentActualDamageCommandId, "the finalizer restores the scope after a synchronous failure");
+
+		damageFinalizer.Invoke(null, [damageState[0], failure]);
+		Equal(0L, HextechCombatHooks.CurrentActualDamageCommandId, "clean caller context after the damage command");
+	}
+
 	[HextechTest]
 	private static void ScopedPatchFinalizersRestoreCallerContextAfterSynchronousFailure()
 	{

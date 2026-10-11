@@ -58,8 +58,6 @@ internal sealed class CombatTrackingSnapshot
 	public Dictionary<uint, int> EnemyPorcupineUnblockedHitsThisCombat { get; set; } = new();
 	public Dictionary<uint, int> EnemyHundredRefinementsUnblockedHitsThisCombat { get; set; } = new();
 	public List<ulong> VakuuControlledPlayersThisCombat { get; set; } = [];
-	public List<ulong> EightPennyGatePlayersTriggeredThisTurn { get; set; } = [];
-	public List<ulong> EightPennyGatePlayersTriggeredSecondThisTurn { get; set; } = [];
 	public Dictionary<ulong, int> InspectExtraDrawsPreventedThisTurn { get; set; } = new();
 	public List<ulong> GripPlayersTriggeredThisTurn { get; set; } = [];
 }

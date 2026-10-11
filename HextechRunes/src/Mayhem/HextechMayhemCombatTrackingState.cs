@@ -73,10 +73,6 @@ internal sealed partial class HextechMayhemCombatTrackingState
 	public readonly Dictionary<uint, int> EnemyHundredRefinementsUnblockedHitsThisCombat = new();
 	public readonly HashSet<ulong> VakuuControlledPlayersThisCombat = new();
 	[CombatTrackingClear(CombatTrackingClearPhase.PlayerTurnStart)]
-	public readonly HashSet<ulong> EightPennyGatePlayersTriggeredThisTurn = new();
-	[CombatTrackingClear(CombatTrackingClearPhase.PlayerTurnStart)]
-	public readonly HashSet<ulong> EightPennyGatePlayersTriggeredSecondThisTurn = new();
-	[CombatTrackingClear(CombatTrackingClearPhase.PlayerTurnStart)]
 	public readonly Dictionary<ulong, int> InspectExtraDrawsPreventedThisTurn = new();
 	// 原版的玩家回合判定从回合开始 hook 起即为 true；单独记录进入出牌阶段前的窗口。
 	[CombatTrackingTransient]

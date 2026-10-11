@@ -18,7 +18,8 @@ internal static partial class Program
 		Expect(json.Contains("\"PlayerCardsDrawnThisCombat\"", StringComparison.Ordinal), "Warmog draw counter keeps the legacy JSON key");
 		Expect(!json.Contains("WarmogsSpirit", StringComparison.Ordinal), "the C# rename does not leak into the JSON");
 
-		const string legacyJson = "{\"PlayerCardsDrawnThisCombat\":{\"1\":7},\"ArcanePunchPlayerAttackCardsPlayed\":3,\"EscapePlanTriggered\":[4,9]}";
+		// 含已删除的「我饥饿」记账键（改为从出牌历史推算，#22）：旧存档读回时直接忽略。
+		const string legacyJson = "{\"PlayerCardsDrawnThisCombat\":{\"1\":7},\"ArcanePunchPlayerAttackCardsPlayed\":3,\"EscapePlanTriggered\":[4,9],\"EightPennyGatePlayersTriggeredThisTurn\":[1],\"EightPennyGatePlayersTriggeredSecondThisTurn\":[1]}";
 		HextechMayhemCombatTrackingState restored = new();
 		restored.Restore(legacyJson);
 		Equal(7, restored.WarmogsSpiritPlayerCardsDrawnThisCombat[1], "legacy Warmog counter restores into the renamed field");

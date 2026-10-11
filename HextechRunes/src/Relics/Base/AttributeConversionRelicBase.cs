@@ -3,6 +3,7 @@ namespace HextechRunes;
 public abstract class AttributeConversionRelicBase : HextechRelicBase
 {
 	private bool _isConverting;
+	private PowerModel? _armedPower;
 	private decimal? _pendingAmount;
 	private Creature? _pendingApplier;
 
@@ -17,9 +18,22 @@ public abstract class AttributeConversionRelicBase : HextechRelicBase
 
 	public override Task AfterCombatEnd(CombatRoom room)
 	{
+		_armedPower = null;
 		_pendingAmount = null;
 		_pendingApplier = null;
 		_isConverting = false;
+		return Task.CompletedTask;
+	}
+
+	// 原版施加管线（PowerCmd.Apply / ModifyAmount）先调 BeforePowerAmountChanged 再问接收修正，传的是同一个能力实例；
+	// 随机数预测等模组只模拟查询钩子、不调本模组的 Before 钩子。在这里登记真实施加的实例，查询钩子只认登记过的那一次。
+	public override Task BeforePowerAmountChanged(PowerModel power, decimal amount, Creature target, Creature? applier, CardModel? cardSource)
+	{
+		if (!_isConverting && target == Owner.Creature && amount != 0m && ShouldConvert(power))
+		{
+			_armedPower = power;
+		}
+
 		return Task.CompletedTask;
 	}
 
@@ -32,8 +46,15 @@ public abstract class AttributeConversionRelicBase : HextechRelicBase
 		}
 
 		// 施加管线结束后再把原属性换成转换后的属性；这条路径拿不到来源卡牌。
-		_pendingAmount = amount;
-		_pendingApplier = applier;
+		// 查询钩子会在真实施加之外被调用（悬停预览、回合结束预测），而原版在问完修正后、After 回调前还有一段等待：
+		// 只有登记过的这次施加记待转换量，并立刻撤销登记，等待期间的模拟调用改写不了它。
+		if (ReferenceEquals(_armedPower, canonicalPower))
+		{
+			_armedPower = null;
+			_pendingAmount = amount;
+			_pendingApplier = applier;
+		}
+
 		modifiedAmount = 0m;
 		return true;
 	}
