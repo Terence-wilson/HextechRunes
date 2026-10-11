@@ -45,6 +45,12 @@ internal sealed class HextechKiwiVfxLibrary
 	}
 
 	/// <summary>重画原版卡底或卡框的发射器（主贴图就是卡底/卡框）。</summary>
+	/// <summary>只发射一次、粒子寿命有限的发射器：系统开头的一下引入（闪光、短促高亮）。</summary>
+	internal static bool IsOneShotIntro(HextechKiwiVfxEmitter emitter)
+	{
+		return emitter.Single && MaxParticleLifetime(emitter.ParticleLifetime) >= 0f;
+	}
+
 	internal static bool DrawsCardBase(HextechKiwiVfxEmitter emitter)
 	{
 		return emitter.Texture == CardBaseTexture

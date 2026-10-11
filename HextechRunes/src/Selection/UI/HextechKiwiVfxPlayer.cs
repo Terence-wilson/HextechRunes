@@ -23,6 +23,10 @@ internal sealed partial class HextechKiwiVfxPlayer : Control
 	// （Sparklies_CENTER 位于 y=200、范围覆盖整张卡；扫光贴图的卡底边也与此吻合）。
 	private const float OriginalCardCenterAboveButtonUnits = 200f;
 
+	// 同两个系统里画在卡上的发射器按约 243 单位宽的卡布置（扫光贴图卡形描边 191..318/512 × 980 单位，
+	// 两侧火花在 ±120~125），而卡框贴图的可见宽度只有 310/512 × 374 ≈ 226 单位，横向收窄到与卡框对齐。
+	private const float OriginalGoldenCardWidthFit = 226f / 243f;
+
 	private const string ShaderTemplate = """
 		shader_type canvas_item;
 		render_mode BLEND_MODE, unshaded;
@@ -226,6 +230,28 @@ internal sealed partial class HextechKiwiVfxPlayer : Control
 
 	internal bool IsFadingOut => _fadingOut;
 
+	/// <summary>
+	/// 从透明淡入，并先把时间推进 <paramref name="skipSeconds"/>，让带出场延迟的常驻发射器一开始就在。
+	/// 用于悬停光：原版开头的短促引入会和常驻光叠成一下闪烁。
+	/// </summary>
+	internal void FadeInFrom(float skipSeconds, float fadeSeconds)
+	{
+		if (skipSeconds > 0f)
+		{
+			Advance(skipSeconds);
+		}
+
+		Modulate = new Color(1f, 1f, 1f, 0f);
+		if (IsInsideTree() && fadeSeconds > 0f)
+		{
+			CreateTween().TweenProperty(this, "modulate:a", 1f, fadeSeconds);
+		}
+		else
+		{
+			Modulate = Colors.White;
+		}
+	}
+
 	/// <summary>从头重播（按钮常驻光重新激活时用）。</summary>
 	internal void Restart()
 	{
@@ -292,7 +318,7 @@ internal sealed partial class HextechKiwiVfxPlayer : Control
 			{
 				finished = false;
 			}
-			state.Upload(state.ResolveOrigin(origin, cardCenter));
+			state.Upload(state.ResolveOrigin(origin, cardCenter), state.ResolveHorizontalFit(cardCenter));
 		}
 
 		if (!finished)
@@ -537,6 +563,11 @@ internal sealed partial class HextechKiwiVfxPlayer : Control
 		}
 
 		/// <summary>按卡缩放的发射器在指定了卡牌参照时，从卡牌中心往下还原原版的按钮位置作为原点。</summary>
+		public float ResolveHorizontalFit(Vector2? cardCenter)
+		{
+			return _definition.Space != "button" && cardCenter.HasValue ? OriginalGoldenCardWidthFit : 1f;
+		}
+
 		public Vector2 ResolveOrigin(Vector2 origin, Vector2? cardCenter)
 		{
 			return _definition.Space != "button" && cardCenter is { } center
@@ -639,7 +670,7 @@ internal sealed partial class HextechKiwiVfxPlayer : Control
 		/// 每帧把所有粒子写进一块缓冲、一次性交给 MultiMesh。逐实例 Set* 每个粒子要 3 次原生调用，
 		/// 金色重随常驻光三份同时开时每帧上千次。
 		/// </summary>
-		public void Upload(Vector2 origin)
+		public void Upload(Vector2 origin, float horizontalFit)
 		{
 			int count = Math.Min(_particles.Count, MaxParticlesPerEmitter);
 			if (count == 0)
@@ -685,8 +716,8 @@ internal sealed partial class HextechKiwiVfxPlayer : Control
 
 				float erosionThreshold = definition.Erosion?.Drive?.SampleScalar(lifeProgress) ?? lifeProgress;
 				// 原版粒子 Y 轴朝上，界面 Y 轴朝下；四边形尺寸是出生缩放的两倍（半宽）。
-				Vector2 position = origin + new Vector2(particle.Position.X, -particle.Position.Y) * _pixelsPerUnit;
-				float width = Math.Max(0f, scale.X) * 2f * _pixelsPerUnit;
+				Vector2 position = origin + new Vector2(particle.Position.X * horizontalFit, -particle.Position.Y) * _pixelsPerUnit;
+				float width = Math.Max(0f, scale.X) * 2f * _pixelsPerUnit * horizontalFit;
 				float height = Math.Max(0f, scale.Y) * 2f * _pixelsPerUnit;
 				float cos = MathF.Cos(-particle.Rotation);
 				float sin = MathF.Sin(-particle.Rotation);

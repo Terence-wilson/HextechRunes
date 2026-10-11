@@ -28,6 +28,10 @@ internal sealed partial class HextechRuneSelectionScreen
 	private const float IdleVfxIntensityScale = 0.75f;
 	private const float HoverVfxFadeOutSeconds = 0.2f;
 
+	// 悬停光去掉开头的一次性引入，跳过常驻卡框光约 0.14 秒的出场延迟，再整体淡入，避免先闪一下再常亮。
+	private const float HoverVfxSkipSeconds = 0.15f;
+	private const float HoverVfxFadeInSeconds = 0.15f;
+
 	// 未选中特效（Augment_StaticVFX）的灰卡粒子 0.4 秒从不透明淡到透明，未选中的卡跟它一起淡出。
 	private const float NotPickedCardFadeSeconds = 0.4f;
 
@@ -56,6 +60,11 @@ internal sealed partial class HextechRuneSelectionScreen
 	// 选中特效：界面关闭时据此决定选中卡在渐隐前还要停留多久。
 	private HextechKiwiVfxPlayer? _selectedCardVfx;
 	private string? _selectedCardVfxSystem;
+
+	// 渐隐期间界面所在的画布层，要高于地图等关闭后紧接着打开的界面。
+	private const int SelectionFadeCanvasLayer = 100;
+
+	private CanvasLayer? _selectionFadeLayer;
 
 	// 选中的卡在界面关闭时渐隐；-1 表示没有可渐隐的卡（自选、仅敌方等）。
 	private int _selectedSlotIndex = -1;
@@ -198,9 +207,15 @@ internal sealed partial class HextechRuneSelectionScreen
 				return;
 			}
 
-			HextechKiwiVfxPlayer? player = AttachCardVfx(slot, slotIndex, TierVfx(_relics[slotIndex], "HoverVFX"), HoverVfxLayer);
+			HextechKiwiVfxPlayer? player = AttachCardVfx(
+				slot,
+				slotIndex,
+				TierVfx(_relics[slotIndex], "HoverVFX"),
+				HoverVfxLayer,
+				include: static emitter => !HextechKiwiVfxLibrary.IsOneShotIntro(emitter));
 			if (player != null)
 			{
+				player.FadeInFrom(HoverVfxSkipSeconds, HoverVfxFadeInSeconds);
 				_cardHoverVfx[slotIndex] = player;
 			}
 		});
@@ -400,7 +415,9 @@ internal sealed partial class HextechRuneSelectionScreen
 		{
 			int index = _selectedSlotIndex;
 			_selectedSlotIndex = -1;
-			if (index < 0
+			// 锻造器选择照常立即关闭，不做停留渐隐。
+			if (_metadataMode == HextechSelectionMetadataMode.Forge
+				|| index < 0
 				|| !IsInsideTree()
 				|| _cardsRow == null
 				|| index >= _cardsRow.GetChildCount()
@@ -434,7 +451,23 @@ internal sealed partial class HextechRuneSelectionScreen
 				}
 			}
 
+			// 卡牌的各级父容器自身也会画底板（半透明黑底等），只隐藏它们自己的绘制，子节点照常显示。
+			for (Node? node = card.GetParent(); node != null; node = node.GetParent())
+			{
+				if (node is CanvasItem ancestor)
+				{
+					ancestor.SelfModulate = Colors.Transparent;
+				}
+				if (node == this)
+				{
+					break;
+				}
+			}
+
 			Visible = true;
+			// 关闭后紧接着可能打开地图，地图画在叠加层栈之上，会盖住还在渐隐的卡。
+			// 下一帧把界面挪到根节点下单独的高层画布（叠加层栈此刻正在移除本界面，不在这里直接改父节点）。
+			Callable.From(MoveToSelectionFadeLayer).CallDeferred();
 			Tween tween = CreateTween();
 			float hold = RemainingSelectedVfxSeconds();
 			if (hold > 0f)
@@ -444,10 +477,36 @@ internal sealed partial class HextechRuneSelectionScreen
 			tween.TweenProperty(card, "modulate:a", 0f, SelectedCardFadeSeconds)
 				.SetTrans(Tween.TransitionType.Quad)
 				.SetEase(Tween.EaseType.In);
-			tween.TweenCallback(Callable.From(QueueFree));
+			tween.TweenCallback(Callable.From(FinishSelectionFadeOut));
 			started = true;
 		});
 		return started;
+	}
+
+	private void MoveToSelectionFadeLayer()
+	{
+		if (!GodotObject.IsInstanceValid(this) || IsQueuedForDeletion() || !IsInsideTree())
+		{
+			return;
+		}
+
+		_selectionFadeLayer = new CanvasLayer
+		{
+			Name = "HextechSelectionFadeLayer",
+			Layer = SelectionFadeCanvasLayer
+		};
+		GetTree().Root.AddChild(_selectionFadeLayer);
+		Reparent(_selectionFadeLayer, keepGlobalTransform: true);
+	}
+
+	private void FinishSelectionFadeOut()
+	{
+		if (_selectionFadeLayer != null && GodotObject.IsInstanceValid(_selectionFadeLayer))
+		{
+			_selectionFadeLayer.QueueFree();
+		}
+
+		QueueFree();
 	}
 
 	private static void IgnoreMouseRecursively(Node node)
