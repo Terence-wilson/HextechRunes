@@ -197,14 +197,6 @@ internal sealed partial class HextechKiwiVfxPlayer : Control
 	/// <summary>原版界面节点的 Layer，同一宿主里按它排先后（数值小的画在下面）。</summary>
 	internal int UiLayer { get; set; }
 
-	/// <summary>已播放的秒数。</summary>
-	internal float ElapsedSeconds => _time;
-
-	internal static float EstimateDurationSeconds(string systemName)
-	{
-		return GetWarmData().Library?.EstimateDurationSeconds(systemName) ?? 0f;
-	}
-
 	/// <summary>
 	/// 整体淡出后释放（悬停离开等）。常驻粒子不会自己结束，所以不等发射器播完，直接按透明度收尾；
 	/// 不在场景树里时立即释放。

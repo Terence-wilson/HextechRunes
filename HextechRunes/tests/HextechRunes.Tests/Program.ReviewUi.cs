@@ -114,7 +114,7 @@ internal static partial class Program
 		string[] unexpectedSystems = library.Systems.Keys.Except(expected, StringComparer.Ordinal).ToArray();
 		Expect(unexpectedSystems.Length == 0, "vfx systems exported but not wired into the screen: " + string.Join(", ", unexpectedSystems));
 
-		// 关闭界面时选中卡要等选中特效播完再渐隐，未选中特效随卡淡出：两者都必须是会结束的一次性特效。
+		// 选中与未选中特效在确认时挂上、不再有人去停：两者都必须是播完自行释放的一次性特效。
 		foreach (string name in rarityKeys.Select(key => HextechKiwiVfxLibrary.TierSystemName(key, "SelectedVFX")).Append(HextechKiwiVfxLibrary.NotPicked))
 		{
 			float duration = library.EstimateDurationSeconds(name);

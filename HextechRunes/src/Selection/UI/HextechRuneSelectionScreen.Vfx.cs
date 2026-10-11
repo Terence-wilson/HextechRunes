@@ -6,12 +6,17 @@ namespace HextechRunes;
 /// 候选卡的原版特效，接入时机对应原版 KiwiAugmentSelection/UIBase 里 Augment_Button 下的粒子节点：
 /// 打开界面时同时弹出（FlashIn）并开始常驻光（Idle）；悬停或手柄焦点时播放悬停光（Hover），离开淡出；
 /// 重随时卡面重建（Refresh）加上层闪光（RefreshOverlay），金色重随额外在按钮上播放点击爆发；
-/// 确认选择时选中的卡播放选中特效（Selected），其余卡播放未选中特效（Static）；界面关闭时选中卡等选中特效播完再渐隐。
+/// 确认选择时选中的卡播放选中特效（Selected），其余卡播放未选中特效（Static），悬停光随按钮切到选中状态立即撤掉；
+/// 界面关闭时三张卡按原版场景退场一起淡出。
 /// 全部是本地表现，失败只记警告；选择结果与联机同步不等任何特效。
 /// </summary>
 internal sealed partial class HextechRuneSelectionScreen
 {
-	private const float SelectedCardFadeSeconds = 0.45f;
+	// 原版 AugmentSelection 场景的 sceneTransitionOut：transitionTime 1.0 秒、startAlpha 255 → endAlpha 0，
+	// 卡牌连同上面的特效整体淡出，没有位移和缩放。easingType 18 的曲线名称数据里没有，按缓动枚举的常见排列推断为 InOutExpo。
+	private const float SelectionSceneFadeOutSeconds = 1.0f;
+	private const Tween.TransitionType SelectionSceneFadeOutTransition = Tween.TransitionType.Expo;
+	private const Tween.EaseType SelectionSceneFadeOutEase = Tween.EaseType.InOut;
 
 	// 原版各粒子节点的 Layer（同一卡上按它排先后）。卡面图标是 15、名称与描述是 20：低于 15 的画在卡面内容下方。
 	private const int CardContentLayer = 15;
@@ -32,12 +37,6 @@ internal sealed partial class HextechRuneSelectionScreen
 	private const float HoverVfxSkipSeconds = 0.15f;
 	private const float HoverVfxFadeInSeconds = 0.15f;
 
-	// 未选中特效（Augment_StaticVFX）的灰卡粒子 0.4 秒从不透明淡到透明，未选中的卡跟它一起淡出。
-	private const float NotPickedCardFadeSeconds = 0.4f;
-
-	// 选中卡等选中特效播完再渐隐；数据估算的时长（银/金 0.9 秒、棱彩约 1.6 秒）超过这个值也只等这么久。
-	private const float MaxSelectedVfxHoldSeconds = 1.6f;
-
 	// 卡槽里卡牌下面还有重随按钮，卡槽中心比卡牌中心低，卡上的特效都挂在卡牌按钮上，以卡牌中心为原点。
 	private enum CardVfxHost
 	{
@@ -56,10 +55,6 @@ internal sealed partial class HextechRuneSelectionScreen
 
 	// 正在显示悬停光的卡槽。
 	private readonly Dictionary<int, HextechKiwiVfxPlayer> _cardHoverVfx = new();
-
-	// 选中特效：界面关闭时据此决定选中卡在渐隐前还要停留多久。
-	private HextechKiwiVfxPlayer? _selectedCardVfx;
-	private string? _selectedCardVfxSystem;
 
 	// 渐隐期间界面所在的画布层，要高于地图等关闭后紧接着打开的界面。
 	private const int SelectionFadeCanvasLayer = 100;
@@ -221,22 +216,25 @@ internal sealed partial class HextechRuneSelectionScreen
 		});
 	}
 
-	private void StopCardHoverVfx(int slotIndex)
+	private void StopCardHoverVfx(int slotIndex, bool immediately = false)
 	{
 		if (_cardHoverVfx.Remove(slotIndex, out HextechKiwiVfxPlayer? player) && GodotObject.IsInstanceValid(player))
 		{
-			player.FadeOutAndFree(HoverVfxFadeOutSeconds);
+			player.FadeOutAndFree(immediately ? 0f : HoverVfxFadeOutSeconds);
 		}
 	}
 
-	/// <summary>确认选择时：选中的卡播放选中特效（盖在卡面内容上），其余卡播放未选中特效（卡面内容下方的灰卡）。</summary>
+	/// <summary>
+	/// 确认选择时：选中的卡播放选中特效（盖在卡面内容上），其余卡播放未选中特效（卡面内容下方的灰卡）。
+	/// 原版按钮此时切到选中状态，状态元素只剩常驻光，悬停光直接撤掉、不淡出。
+	/// </summary>
 	private void PlaySelectionVfx()
 	{
 		HextechPresentation.TryRun("Mayhem", "SelectionScreen.PlaySelectionVfx failed", () =>
 		{
 			foreach (int slotIndex in _cardHoverVfx.Keys.ToArray())
 			{
-				StopCardHoverVfx(slotIndex);
+				StopCardHoverVfx(slotIndex, immediately: true);
 			}
 
 			if (_selectedSlotIndex < 0 || _cardsRow == null)
@@ -254,8 +252,7 @@ internal sealed partial class HextechRuneSelectionScreen
 
 				if (i == _selectedSlotIndex)
 				{
-					_selectedCardVfxSystem = TierVfx(_relics[i], "SelectedVFX");
-					_selectedCardVfx = AttachCardVfx(slot, i, _selectedCardVfxSystem, PickedVfxLayer);
+					AttachCardVfx(slot, i, TierVfx(_relics[i], "SelectedVFX"), PickedVfxLayer);
 				}
 				else
 				{
@@ -387,25 +384,11 @@ internal sealed partial class HextechRuneSelectionScreen
 		}
 	}
 
-	/// <summary>选中特效还要播多久（按数据估算的时长减去已播时间，封顶 <see cref="MaxSelectedVfxHoldSeconds"/>）。</summary>
-	private float RemainingSelectedVfxSeconds()
-	{
-		if (_selectedCardVfx == null
-			|| _selectedCardVfxSystem == null
-			|| !GodotObject.IsInstanceValid(_selectedCardVfx)
-			|| _selectedCardVfx.IsQueuedForDeletion())
-		{
-			return 0f;
-		}
-
-		float remaining = HextechKiwiVfxPlayer.EstimateDurationSeconds(_selectedCardVfxSystem) - _selectedCardVfx.ElapsedSeconds;
-		return Math.Clamp(remaining, 0f, MaxSelectedVfxHoldSeconds);
-	}
-
 	/// <summary>
-	/// 界面关闭时让被选中的卡原地渐隐：界面已经移出叠加层栈，这里只是让节点多留一会儿，
-	/// 未选中的卡随未选中特效一起淡出，其余元素直接透明（保持排版不动）、全部不接收鼠标；
-	/// 选中的卡保持原大小、位置和选中态，等选中特效播完再淡出，之后释放整个界面。
+	/// 界面关闭时按原版场景退场淡出：界面已经移出叠加层栈，这里只是让节点多留一会儿。
+	/// 三个卡槽（卡牌、卡上的特效与重随按钮）保持原大小和位置，一起在 <see cref="SelectionSceneFadeOutSeconds"/> 内淡出，
+	/// 选中卡保留选中态；原版场景里没有对应物的本模组元素（面板底、标题、敌方预览、操作按钮）直接透明，
+	/// 免得在地图上留半透明黑底；全部不接收鼠标，淡完释放整个界面。
 	/// 选择结果和联机同步不等这段动画。返回 false 表示没有可渐隐的卡，调用方直接释放。
 	/// </summary>
 	private bool TryPlaySelectedCardFadeOut()
@@ -429,30 +412,21 @@ internal sealed partial class HextechRuneSelectionScreen
 			}
 
 			IgnoreMouseRecursively(this);
-			Tween? notPickedFade = null;
-			for (Node node = card; node != this && node.GetParent() is Node parent; node = parent)
+			Control cardsRow = _cardsRow;
+			// 卡槽那一行以外的本模组元素直接透明。
+			for (Node node = cardsRow; node != this && node.GetParent() is Node parent; node = parent)
 			{
 				foreach (Node sibling in parent.GetChildren())
 				{
-					if (sibling == node || sibling is not CanvasItem item)
-					{
-						continue;
-					}
-
-					if (parent == _cardsRow)
-					{
-						notPickedFade ??= CreateTween().SetParallel();
-						notPickedFade.TweenProperty(item, "modulate:a", 0f, NotPickedCardFadeSeconds);
-					}
-					else
+					if (sibling != node && sibling is CanvasItem item)
 					{
 						item.Modulate = Colors.Transparent;
 					}
 				}
 			}
 
-			// 卡牌的各级父容器自身也会画底板（半透明黑底等），只隐藏它们自己的绘制，子节点照常显示。
-			for (Node? node = card.GetParent(); node != null; node = node.GetParent())
+			// 卡槽行的各级父容器自身也会画底板（半透明黑底等），只隐藏它们自己的绘制，子节点照常显示。
+			for (Node? node = cardsRow; node != null; node = node.GetParent())
 			{
 				if (node is CanvasItem ancestor)
 				{
@@ -468,16 +442,17 @@ internal sealed partial class HextechRuneSelectionScreen
 			// 关闭后紧接着可能打开地图，地图画在叠加层栈之上，会盖住还在渐隐的卡。
 			// 下一帧把界面挪到根节点下单独的高层画布（叠加层栈此刻正在移除本界面，不在这里直接改父节点）。
 			Callable.From(MoveToSelectionFadeLayer).CallDeferred();
-			Tween tween = CreateTween();
-			float hold = RemainingSelectedVfxSeconds();
-			if (hold > 0f)
+			Tween tween = CreateTween().SetParallel();
+			foreach (Node child in cardsRow.GetChildren())
 			{
-				tween.TweenInterval(hold);
+				if (child is CanvasItem cardSlot)
+				{
+					tween.TweenProperty(cardSlot, "modulate:a", 0f, SelectionSceneFadeOutSeconds)
+						.SetTrans(SelectionSceneFadeOutTransition)
+						.SetEase(SelectionSceneFadeOutEase);
+				}
 			}
-			tween.TweenProperty(card, "modulate:a", 0f, SelectedCardFadeSeconds)
-				.SetTrans(Tween.TransitionType.Quad)
-				.SetEase(Tween.EaseType.In);
-			tween.TweenCallback(Callable.From(FinishSelectionFadeOut));
+			tween.Chain().TweenCallback(Callable.From(FinishSelectionFadeOut));
 			started = true;
 		});
 		return started;

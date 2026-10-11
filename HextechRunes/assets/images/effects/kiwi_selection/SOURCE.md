@@ -66,6 +66,51 @@ original card centre 342 px = 217 units above the button centre; the mod anchors
 their card-space emitters 200 units above the button (`Sparklies_CENTER` at
 y = 200), measured from the mod's actual card centre.
 
+## Selection sequence
+
+What happens in the original after an augment is picked, from the UIBase bin
+(`ClientStates/Gameplay/UX/LoL/Kiwi/KiwiAugmentSelection/UIBase`, 16.20) and the
+particle data above. Field names were recovered by hashing candidate names
+against the bin's FNV-1a field hashes.
+
+| Time | What | Data |
+| --- | --- | --- |
+| 0 | The chosen `Augment_Button` switches to its selected state. Every state list (`defaultStateElements`, `clickedStateElements`, `selectedStateElements` and two more unnamed ones) holds only `Augment_IdleVFX`; only `hoverStateElements` adds `Augment_HoverVFX`. So the hover glow is dropped outright and the idle glow stays. | `Augment_Button` (`0x2696e894`) |
+| 0 | `Augment_PickedVFX` (Layer 25, over the content) plays `Augment_<tier>_SelectedVFX` on the chosen card: frame lightning 0.25–0.35 s, frame-tag flashes 0.2–0.9 s, edge sparkles emitted for 0.3–0.5 s. About 0.9 s for Silver/Gold and 1.6 s for Prismatic until the last particle is gone. | Particle data |
+| 0 | `Augment_NotPickedVFX` (Layer 6, under the content) plays `Augment_StaticVFX` on each other card: one alpha-blended quad of `AugmentCard_NotPicked` (a grey/black "dead" card, 2×187.5 units = card size). Particle life is 0.4 s with alpha 1.0 → 0.2 (at 20 %) → 0.1 (50 %) → 0. The card base flashes dark and clears within 0.4 s; icon and text, drawn above it, are not affected. It does **not** remove the card. | Particle data, Layer from UIBase |
+| 0 → 1.0 s | The whole `AugmentSelection` scene fades out: `sceneTransitionOut` = `transitionTime` 1.0, `easingType` 18, `startAlpha` 255 → `endAlpha` 0. This covers all three cards (frame, content, idle glow, Selected/Static particles) and the dark backdrop `AugmentSelection_Background` (Layer 1, colour alpha 181). | `UiSceneData` `AugmentSelection` (`0x679414ae`) |
+| — | No element of the scene has position, scale or rotation keys, and no element targets the HUD augment bar. The cards neither move, scale nor dissolve; the chosen card is not removed separately. | Absence in UIBase |
+
+For reference, `sceneTransitionIn` is 0.15 s with `easingType` 14, and the
+show/hide toggle (`AugmentSelectionToggleScene`) fades in and out over 0.65 s.
+
+Inferred rather than read from data:
+
+- The scene fade starts at the moment of the pick. The data defines the fade but
+  not its trigger. The client code hides the scene, and with Picked/NotPicked
+  being code-driven too, the three most likely start together.
+- The easing curve. The bin stores only the enum values 14 and 18; the client
+  executable is packed and holds no enum names. Assuming the usual order (Linear,
+  then In/Out/InOut for Sine, Quad, Cubic, Quart, Quint, Expo, …), 14 is OutQuint
+  and 18 is InOutExpo. Under InOutExpo the cards stay almost opaque for the first
+  ~0.3 s, so most of SelectedVFX is visible before the fade takes over.
+- No original footage was recorded: ARAM: Mayhem has no practice mode, so
+  recording it would mean playing a live online match.
+
+The mod maps this as follows. On confirm it plays Selected on the chosen card
+and Static on the others, and removes hover glows immediately. When the screen
+closes, all three card slots fade together over 1.0 s (Expo, InOut) at their
+original size and position; the chosen card keeps its selected outline. In
+single player the screen closes right after confirm, so this matches the
+original. In multiplayer the screen waits for other players first, so the fade
+plays later. Two deliberate differences from the original:
+
+- The backdrop and the mod-only elements (panel, title, enemy preview, buttons)
+  are hidden at once instead of fading. The fading cards are moved onto a
+  CanvasLayer above the map that opens next, and a fading dark panel there
+  would show up as a half-transparent black box over the map.
+- Forge selection closes immediately without the fade.
+
 ## Data format
 
 Field names follow the original `VfxEmitterDefinitionData`. Every `Value*` is
