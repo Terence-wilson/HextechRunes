@@ -1,4 +1,6 @@
 using Godot;
+using MegaCrit.Sts2.Core.Nodes;
+using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
 
 namespace HextechRunes;
 
@@ -60,6 +62,17 @@ internal sealed partial class HextechRuneSelectionScreen
 	private const int SelectionFadeCanvasLayer = 100;
 
 	private CanvasLayer? _selectionFadeLayer;
+
+	// 退场期间有新界面入栈（连续锻造器选择、选完海克斯紧接着发锻造器、锻造器后的原版选牌界面），
+	// 退场层比叠加层栈高，会盖住新界面的开头；此时把剩余淡出压到这么短。
+	private const float SelectionFadeInterruptedSeconds = 0.12f;
+
+	private Tween? _selectionFadeTween;
+	private NOverlayStack? _selectionFadeStack;
+	private Node? _selectionFadeRun;
+	private Control? _selectionFadeCardsRow;
+	private int _selectionFadeBaselineScreens = -1;
+	private bool _selectionFadeFinished;
 
 	// 选中的卡在界面关闭时渐隐；-1 表示没有可渐隐的卡（自选、仅敌方等）。
 	private int _selectedSlotIndex = -1;
@@ -440,20 +453,67 @@ internal sealed partial class HextechRuneSelectionScreen
 			// 关闭后紧接着可能打开地图，地图画在叠加层栈之上，会盖住还在渐隐的卡。
 			// 下一帧把界面挪到根节点下单独的高层画布（叠加层栈此刻正在移除本界面，不在这里直接改父节点）。
 			Callable.From(MoveToSelectionFadeLayer).CallDeferred();
-			Tween tween = CreateTween().SetParallel();
-			foreach (Node child in cardsRow.GetChildren())
-			{
-				if (child is CanvasItem cardSlot)
-				{
-					tween.TweenProperty(cardSlot, "modulate:a", 0f, SelectionSceneFadeOutSeconds)
-						.SetTrans(SelectionSceneFadeOutTransition)
-						.SetEase(SelectionSceneFadeOutEase);
-				}
-			}
-			tween.Chain().TweenCallback(Callable.From(FinishSelectionFadeOut));
+			_selectionFadeTween = StartSelectionFadeTween(cardsRow, SelectionSceneFadeOutSeconds, SelectionSceneFadeOutTransition, SelectionSceneFadeOutEase);
+			WatchSelectionFadeInterruptions(cardsRow);
 			started = true;
 		});
 		return started;
+	}
+
+	private Tween StartSelectionFadeTween(Control cardsRow, float seconds, Tween.TransitionType transition, Tween.EaseType ease)
+	{
+		Tween tween = CreateTween().SetParallel();
+		foreach (Node child in cardsRow.GetChildren())
+		{
+			if (child is CanvasItem cardSlot)
+			{
+				tween.TweenProperty(cardSlot, "modulate:a", 0f, seconds)
+					.SetTrans(transition)
+					.SetEase(ease);
+			}
+		}
+		tween.Chain().TweenCallback(Callable.From(FinishSelectionFadeOut));
+		return tween;
+	}
+
+	/// <summary>
+	/// 退场开始时本界面还在栈的列表里（原版 Remove 先回调 AfterOverlayClosed 再删列表），所以基准是当前数量减一；
+	/// 之后栈里界面多于基准就是有新界面入栈。地图不在叠加层栈里，单纯打开地图不会打断退场。
+	/// 局内场景退出（回主菜单、读档）时立即释放，不在菜单上残留。
+	/// </summary>
+	private void WatchSelectionFadeInterruptions(Control cardsRow)
+	{
+		if (NOverlayStack.Instance is { } stack)
+		{
+			_selectionFadeStack = stack;
+			_selectionFadeBaselineScreens = Math.Max(0, stack.ScreenCount - 1);
+			_selectionFadeCardsRow = cardsRow;
+			stack.Changed += OnOverlayStackChangedDuringFade;
+		}
+
+		if (NRun.Instance is Node run)
+		{
+			_selectionFadeRun = run;
+			run.TreeExiting += FinishSelectionFadeOut;
+		}
+	}
+
+	private void OnOverlayStackChangedDuringFade()
+	{
+		if (_selectionFadeFinished
+			|| _selectionFadeStack == null
+			|| !GodotObject.IsInstanceValid(_selectionFadeStack)
+			|| _selectionFadeStack.ScreenCount <= _selectionFadeBaselineScreens
+			|| _selectionFadeCardsRow is not { } cardsRow
+			|| !GodotObject.IsInstanceValid(cardsRow))
+		{
+			return;
+		}
+
+		// 只压缩一次：基准抬到当前数量，后续入栈不再重复处理。
+		_selectionFadeBaselineScreens = int.MaxValue;
+		_selectionFadeTween?.Kill();
+		_selectionFadeTween = StartSelectionFadeTween(cardsRow, SelectionFadeInterruptedSeconds, Tween.TransitionType.Linear, Tween.EaseType.InOut);
 	}
 
 	private void MoveToSelectionFadeLayer()
@@ -474,6 +534,22 @@ internal sealed partial class HextechRuneSelectionScreen
 
 	private void FinishSelectionFadeOut()
 	{
+		if (_selectionFadeFinished)
+		{
+			return;
+		}
+
+		_selectionFadeFinished = true;
+		_selectionFadeTween?.Kill();
+		if (_selectionFadeRun != null && GodotObject.IsInstanceValid(_selectionFadeRun))
+		{
+			_selectionFadeRun.TreeExiting -= FinishSelectionFadeOut;
+		}
+		if (_selectionFadeStack != null && GodotObject.IsInstanceValid(_selectionFadeStack))
+		{
+			_selectionFadeStack.Changed -= OnOverlayStackChangedDuringFade;
+		}
+
 		if (_selectionFadeLayer != null && GodotObject.IsInstanceValid(_selectionFadeLayer))
 		{
 			_selectionFadeLayer.QueueFree();

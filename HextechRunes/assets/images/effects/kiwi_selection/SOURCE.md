@@ -110,6 +110,12 @@ plays later. Two deliberate differences from the original:
   CanvasLayer above the map that opens next, and a fading dark panel there
   would show up as a half-transparent black box over the map.
 - Forge selection uses the same exit as augment selection.
+- The exit layer sits above the overlay stack, so if another overlay is pushed
+  while the exit is still fading (consecutive forge choices, a forge choice right
+  after an augment, the vanilla card grid after an enchant/remove forge), the
+  remaining fade is cut to 0.12 s instead of covering the new screen. The
+  original only ever shows one selection at a time, so there is no reference for
+  this case. The exit is also dropped at once when the run scene exits.
 
 ## Re-exporting
 
