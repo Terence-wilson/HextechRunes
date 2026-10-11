@@ -398,9 +398,7 @@ internal sealed partial class HextechRuneSelectionScreen
 		{
 			int index = _selectedSlotIndex;
 			_selectedSlotIndex = -1;
-			// 锻造器选择照常立即关闭，不做停留渐隐。
-			if (_metadataMode == HextechSelectionMetadataMode.Forge
-				|| index < 0
+			if (index < 0
 				|| !IsInsideTree()
 				|| _cardsRow == null
 				|| index >= _cardsRow.GetChildCount()

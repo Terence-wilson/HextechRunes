@@ -109,7 +109,7 @@ plays later. Two deliberate differences from the original:
   are hidden at once instead of fading. The fading cards are moved onto a
   CanvasLayer above the map that opens next, and a fading dark panel there
   would show up as a half-transparent black box over the map.
-- Forge selection closes immediately without the fade.
+- Forge selection uses the same exit as augment selection.
 
 ## Data format
 
