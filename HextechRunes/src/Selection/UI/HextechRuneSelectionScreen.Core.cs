@@ -57,13 +57,16 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 
 	public NetScreenType ScreenType => NetScreenType.Rewards;
 
-	public bool UseSharedBackstop => true;
+	// 外部表现层接管时由它自己负责背景。
+	public bool UseSharedBackstop => !IsExternallyPresented;
 
 	// 只在游戏处于手柄/纯键盘方向导航时给默认焦点:原版切进手柄模式与界面切换时都会聚焦它;鼠标玩家返回 null,不出焦点框。
 	public Control? DefaultFocusedControl => HextechControllerInput.IsDirectionalNavigation
-		? _holders.FirstOrDefault(CanReceiveFocus)
-			?? _selfPickButtons.FirstOrDefault(CanReceiveFocus)
-			?? (_enemyOnlyConfirm != null && CanReceiveFocus(_enemyOnlyConfirm) ? _enemyOnlyConfirm : null)
+		? (IsExternallyPresented
+			? PresenterDefaultFocus
+			: (_holders.FirstOrDefault(CanReceiveFocus)
+				?? _selfPickButtons.FirstOrDefault(CanReceiveFocus)
+				?? (_enemyOnlyConfirm != null && CanReceiveFocus(_enemyOnlyConfirm) ? _enemyOnlyConfirm : null)))
 		: null;
 
 	public bool RequestedReroll => false;
@@ -161,7 +164,10 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		FocusMode = FocusModeEnum.All;
 		FocusBehaviorRecursive = FocusBehaviorRecursiveEnum.Enabled;
 		Visible = true;
-		BuildUi();
+		if (!TryStartExternalPresentation())
+		{
+			BuildUi();
+		}
 		if (_goldenRerollSession?.CanActivate == true)
 		{
 			HextechGoldenRerollDebug.RegisterScreen(this);

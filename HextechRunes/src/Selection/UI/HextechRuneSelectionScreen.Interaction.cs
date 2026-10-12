@@ -390,6 +390,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 
 		HextechLog.Info("Mayhem", $"SelectionScreen.ApplyEnemyHexAdjustment: slots={string.Join(",", _monsterHexKinds.Select(static hex => hex?.ToString() ?? "None"))} rerolls={string.Join(",", _enemyHexRerollCounts)}");
 		RebuildEnemyPreview();
+		NotifyPresenterEnemyHexesChanged();
 	}
 
 	private void NotifyEnemyHexChanged()

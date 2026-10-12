@@ -76,6 +76,7 @@ internal static partial class HextechRunLifecycleHooks
 		private static void Postfix(RunState? __state, bool isVictory, SerializableRun __result)
 		{
 			ResetTransientRunState();
+			HextechSelectionProgress.Reset([]);
 			HextechGoldrendSync.ClearRun(__state);
 			HextechTelemetry.OnRunEnded(__state, __result, isVictory);
 		}

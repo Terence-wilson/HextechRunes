@@ -36,6 +36,9 @@ internal static partial class HextechRuneSelectionCoordinator
 			pendingSelections,
 			resolvedSelections);
 
+		// 本轮开始：没有候选、已直接结算的玩家算作已完成。
+		HextechSelectionProgress.Reset(resolvedSelections.Select(static resolved => resolved.Player.NetId));
+
 		// 敌方调整由固定的权威玩家在自己的选择界面里完成;他本次没有候选(不会弹选择界面)时,
 		// 其余客户端会一直等他的调整结果,所以这种情况下本幕不开放敌方调整。各端对 pending 的判断一致。
 		Player? enemyHexAuthority = GetActRollAuthorityPlayer(runManager, runState);
