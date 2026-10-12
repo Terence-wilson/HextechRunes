@@ -103,7 +103,7 @@ internal static partial class HextechRuneSelectionCoordinator
 			.ToHashSet();
 		HashSet<ModelId> excludedIds = new(currentOptionIds);
 		excludedIds.UnionWith(seenOptionIds);
-		HextechRarityTier rarity = rarityOverride ?? GetRarityForOptions([ currentOptions[slotIndex] ]);
+		HextechRarityTier rarity = rarityOverride ?? GetRerollRarity(currentOptions, slotIndex);
 		List<RelicModel> candidates = BuildRerollCandidates(player, rarity, runState, excludedIds, currentOptions, slotIndex, sortCandidates);
 		if (candidates.Count == 0 && seenOptionIds.Count > 0)
 		{
@@ -119,7 +119,7 @@ internal static partial class HextechRuneSelectionCoordinator
 
 		int characterWeight = HextechWeightedRuneOptions.GetWeight(currentOptions);
 		Dictionary<string, int> tagCounts = BuildOwnedRuneTagCounts(player, useEndlessTagWindow);
-		List<int> weights = BuildSelectionWeights(candidates, tagCounts, useEndlessTagWindow, GetRuneCharacterPool(player), characterWeight, out int totalWeight);
+		List<int> weights = BuildSelectionWeights(candidates, tagCounts, useEndlessTagWindow, GetRuneCharacterId(player), characterWeight, out int totalWeight);
 		int selectedIndex = rollIndex(candidates, weights, totalWeight, rarity);
 		List<RelicModel> updated = currentOptions.ToList();
 		updated[slotIndex] = CreateSelectableRuneOption(player, candidates[selectedIndex]);

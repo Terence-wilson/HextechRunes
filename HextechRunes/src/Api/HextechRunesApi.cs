@@ -8,7 +8,8 @@ public static class HextechRunesApi
 		| PlayerRuneFlags.AttributeConversionExclusive
 		| PlayerRuneFlags.FirstActExcluded
 		| PlayerRuneFlags.ThirdActExcluded
-		| PlayerRuneFlags.SelectionExcluded;
+		| PlayerRuneFlags.SelectionExcluded
+		| PlayerRuneFlags.GuaranteedFirstPick;
 
 	/// <summary>
 	/// 注册外部玩家符文。必须在模组初始化阶段、共享遗物池首次枚举前调用。

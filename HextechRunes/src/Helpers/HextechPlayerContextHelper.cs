@@ -86,6 +86,19 @@ internal static class HextechPlayerContextHelper
 		return player.Character.Id == ModelDb.GetId<Necrobinder>();
 	}
 
+	public static ModelId GetCharacterId(PlayerRuneCharacterPool characterPool)
+	{
+		return characterPool switch
+		{
+			PlayerRuneCharacterPool.Ironclad => ModelDb.GetId<Ironclad>(),
+			PlayerRuneCharacterPool.Silent => ModelDb.GetId<Silent>(),
+			PlayerRuneCharacterPool.Regent => ModelDb.GetId<Regent>(),
+			PlayerRuneCharacterPool.Defect => ModelDb.GetId<Defect>(),
+			PlayerRuneCharacterPool.Necrobinder => ModelDb.GetId<Necrobinder>(),
+			_ => throw new ArgumentOutOfRangeException(nameof(characterPool), characterPool, null)
+		};
+	}
+
 	public static bool TryGetRuneCharacterPool(Player player, out PlayerRuneCharacterPool characterPool)
 	{
 		if (IsIroncladPlayer(player))

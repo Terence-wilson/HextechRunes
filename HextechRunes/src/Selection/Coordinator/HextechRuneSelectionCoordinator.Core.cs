@@ -282,6 +282,7 @@ internal static partial class HextechRuneSelectionCoordinator
 			runState,
 			excludedIds,
 			useEndlessTagWindow: modifier.IsEndlessLoopActive);
+		options = ApplyStageGuaranteedPick(runState, player, actIndex, choiceOrdinal, excludedIds, options);
 		if (options.Count == 0)
 		{
 			HextechLog.Warn("Mayhem", $"HandleHextechActSelection no options: player={player.NetId} act={actIndex} ordinal={choiceOrdinal} rarity={rarity}");
@@ -360,6 +361,21 @@ internal static partial class HextechRuneSelectionCoordinator
 
 		HextechLog.Info("Mayhem", $"HandleHextechActSelection obtained: player={player.NetId} ordinal={choiceOrdinal} relic={selected.CanonicalId().Entry}");
 		return true;
+	}
+
+	// 每幕首次三选一加入保底候选（PlayerRuneFlags.GuaranteedFirstPick）；预设挑战按挑战设定发放，不加保底。
+	// 单机与联机共用，联机各端用同样的已见记录各自算出同一个结果。
+	private static List<RelicModel> ApplyStageGuaranteedPick(
+		RunState runState,
+		Player player,
+		int actIndex,
+		int choiceOrdinal,
+		IReadOnlySet<ModelId> seenIds,
+		List<RelicModel> options)
+	{
+		return choiceOrdinal == 0 && !HextechPresetChallengeRegistry.IsActive(runState)
+			? ApplyGuaranteedFirstPick(player, runState, actIndex, seenIds, options)
+			: options;
 	}
 
 	// 关掉地图才能显示选择覆盖层;返回 true 表示关过地图,选择结束后要重新打开(调用方等一帧再继续)。

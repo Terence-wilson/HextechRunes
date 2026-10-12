@@ -8,7 +8,9 @@ public enum PlayerRuneFlags
 	AttributeConversionExclusive = 2,
 	FirstActExcluded = 4,
 	ThirdActExcluded = 8,
-	SelectionExcluded = 16
+	SelectionExcluded = 16,
+	// 每幕首次三选一保底出现一个（见 HextechRunePoolBuilder.ApplyGuaranteedFirstPick）。
+	GuaranteedFirstPick = 32
 }
 
 public enum PlayerRuneCharacterPool

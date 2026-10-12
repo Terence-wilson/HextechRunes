@@ -15,13 +15,18 @@ internal static class HextechRunePoolBuilder
 
 	public static List<RelicModel> BuildSelectableRunePool(Player player, HextechRarityTier rarity, RunState runState, IReadOnlySet<ModelId>? excludedIds = null)
 	{
+		return FilterSelectableRunes(player, HextechCatalog.GetConfigurablePlayerRuneTypesForRarity(rarity), runState, excludedIds);
+	}
+
+	private static List<RelicModel> FilterSelectableRunes(Player player, IEnumerable<Type> runeTypes, RunState runState, IReadOnlySet<ModelId>? excludedIds)
+	{
 		HashSet<ModelId> ownedIds = player.Relics
 			.Where(HextechCatalog.IsHextechRelic)
 			.Select(static relic => relic.CanonicalId())
 			.ToHashSet();
 		HashSet<ModelId> blockedOwnedIds = ownedIds.ToHashSet();
 		blockedOwnedIds.UnionWith(HextechCatalog.GetMutuallyExclusivePlayerRuneIds(ownedIds));
-		List<RelicModel> pool = HextechCatalog.GetConfigurablePlayerRuneTypesForRarity(rarity)
+		List<RelicModel> pool = runeTypes
 			.Where(HextechRuntimeRuneCompatibility.IsPlayerRuneAvailableForCurrentRuntime)
 			.Where(type => HextechCatalog.IsPlayerRuneAllowedInAct(type, runState.CurrentActIndex))
 			.Select(static type => ModelDb.GetById<RelicModel>(ModelDb.GetId(type)))
@@ -93,6 +98,113 @@ internal static class HextechRunePoolBuilder
 					BuildWeightedPoolKey(slotCandidates, weights))));
 		return new HextechWeightedRuneOptions(HextechRuneGeneration.Transform(player, rarity, runState, selectionStageIndex,
 			picked.Select(relic => CreateSelectableRuneOption(player, relic)).ToList()), picked.CharacterWeightPercent);
+	}
+
+	/// <summary>
+	/// 每幕首次三选一的保底：带 GuaranteedFirstPick 的符文里挑一个放进候选，不受本幕品级限制，
+	/// 其余过滤（角色可用、本幕允许、未拥有/互斥、配置禁用）与普通候选池相同；优先挑本局没见过的。
+	/// 候选里已经有保底符文时原样返回。挑选用按 幕 + 玩家 的稳定随机：单机不推进 Niche，联机各端结果一致。
+	/// 放在最后一格，首个候选的品级（整次选择的品级，金色重随与自选池按它取）保持不变。
+	/// </summary>
+	public static List<RelicModel> ApplyGuaranteedFirstPick(
+		Player player,
+		RunState runState,
+		int selectionStageIndex,
+		IReadOnlySet<ModelId>? seenIds,
+		List<RelicModel> options)
+	{
+		if (options.Any(IsGuaranteedFirstPickRune))
+		{
+			return options;
+		}
+
+		HashSet<ModelId> optionIds = options.Select(static relic => relic.CanonicalId()).ToHashSet();
+		List<RelicModel> available = FilterSelectableRunes(player, GetGuaranteedFirstPickTypes(), runState, optionIds);
+		List<RelicModel> candidates = SelectGuaranteedCandidates(available, seenIds, ExcludesUpgradeForGuaranteedSlot(options));
+		if (candidates.Count == 0)
+		{
+			return options;
+		}
+
+		RelicModel guaranteed = HextechStableRandom.Pick(
+			candidates,
+			runState,
+			static relic => relic.CanonicalId().Entry,
+			"guaranteed-first-pick",
+			selectionStageIndex.ToString(),
+			HextechStableRandom.PlayerKey(player));
+		HextechLog.Info("Mayhem", $"Guaranteed first pick: player={player.NetId} stage={selectionStageIndex} relic={guaranteed.CanonicalId().Entry} candidates={candidates.Count}");
+		return new HextechWeightedRuneOptions(
+			PlaceGuaranteedOption(options, CreateSelectableRuneOption(player, guaranteed)),
+			HextechWeightedRuneOptions.GetWeight(options));
+	}
+
+	internal static bool IsGuaranteedFirstPickRune(RelicModel relic)
+	{
+		return HextechContentRegistry.PlayerRuneMetadata.HasFlag(
+			(relic.CanonicalInstance ?? relic).GetType(),
+			PlayerRuneFlags.GuaranteedFirstPick);
+	}
+
+	private static IEnumerable<Type> GetGuaranteedFirstPickTypes()
+	{
+		PlayerRuneMetadataCatalog metadata = HextechContentRegistry.PlayerRuneMetadata;
+		return metadata.TypesByFlag.TryGetValue(PlayerRuneFlags.GuaranteedFirstPick, out IReadOnlyList<Type>? types)
+			? types.Where(metadata.IsConfigurable)
+			: [];
+	}
+
+	// 保底占最后一格（候选不满三个时追加），所以只看前面保留下来的候选里有没有升级类符文。
+	private static bool ExcludesUpgradeForGuaranteedSlot(IReadOnlyList<RelicModel> options)
+	{
+		int keptCount = options.Count >= MaxRuneOptionCount ? MaxRuneOptionCount - 1 : options.Count;
+		return options.Take(keptCount).Any(IsUpgradeRune);
+	}
+
+	internal static List<RelicModel> SelectGuaranteedCandidates(
+		IReadOnlyList<RelicModel> available,
+		IReadOnlySet<ModelId>? seenIds,
+		bool upgradeAlreadySelected)
+	{
+		List<RelicModel> constrained = ConstrainCandidates(available, upgradeAlreadySelected);
+		List<RelicModel> unseen = seenIds is { Count: > 0 }
+			? constrained.Where(relic => !seenIds.Contains(relic.CanonicalId())).ToList()
+			: constrained;
+		return unseen.Count > 0 ? unseen : constrained;
+	}
+
+	internal static List<RelicModel> PlaceGuaranteedOption(IReadOnlyList<RelicModel> options, RelicModel guaranteed)
+	{
+		List<RelicModel> updated = options.ToList();
+		if (updated.Count >= MaxRuneOptionCount)
+		{
+			updated[MaxRuneOptionCount - 1] = guaranteed;
+			updated.RemoveRange(MaxRuneOptionCount, updated.Count - MaxRuneOptionCount);
+		}
+		else
+		{
+			updated.Add(guaranteed);
+		}
+
+		return updated;
+	}
+
+	/// <summary>
+	/// 重随某一格时按哪个品级抽：通常是这一格自己的品级；保底符文的品级可能与本幕不同，
+	/// 重随它时改按其他（非保底）候选的品级，回到本幕的正常随机池。
+	/// </summary>
+	internal static HextechRarityTier GetRerollRarity(IReadOnlyList<RelicModel> options, int slotIndex)
+	{
+		if (IsGuaranteedFirstPickRune(options[slotIndex]))
+		{
+			RelicModel? regular = options.Where((relic, index) => index != slotIndex && !IsGuaranteedFirstPickRune(relic)).FirstOrDefault();
+			if (regular != null)
+			{
+				return GetRarityForOptions([ regular ]);
+			}
+		}
+
+		return GetRarityForOptions([ options[slotIndex] ]);
 	}
 
 	/// <summary>
@@ -170,14 +282,14 @@ internal static class HextechRunePoolBuilder
 
 	internal static int AdvanceCharacterWeight(Player player, int weight, RelicModel drawn)
 	{
-		PlayerRuneCharacterPool? character = GetRuneCharacterPool(player);
-		return character.HasValue
+		ModelId? character = GetRuneCharacterId(player);
+		return character != null
 			? HextechWeightedRuneOptions.Advance(weight, IsRuneForCharacter(drawn, character)) : weight;
 	}
 
 	internal static List<int> BuildSelectionWeights(IReadOnlyList<RelicModel> pool,
 		IReadOnlyDictionary<string, int> tagCounts, bool useEndlessTagWindow,
-		PlayerRuneCharacterPool? character, int characterWeightPercent, out int totalWeight)
+		ModelId? character, int characterWeightPercent, out int totalWeight)
 	{
 		List<int> weights = BuildRuneTagWeights(pool, tagCounts, useEndlessTagWindow, out _);
 		totalWeight = 0;
@@ -336,7 +448,7 @@ internal static class HextechRunePoolBuilder
 				break;
 			}
 
-			List<int> weights = BuildSelectionWeights(slotCandidates, tagCounts, useEndlessTagWindow, GetRuneCharacterPool(player), characterWeight, out int totalWeight);
+			List<int> weights = BuildSelectionWeights(slotCandidates, tagCounts, useEndlessTagWindow, GetRuneCharacterId(player), characterWeight, out int totalWeight);
 			int index = SelectWeightedIndex(weights, roll(slotCandidates, weights, totalWeight, i));
 			RelicModel chosen = slotCandidates[index];
 			selected.Add(chosen);
@@ -348,20 +460,34 @@ internal static class HextechRunePoolBuilder
 		return new HextechWeightedRuneOptions(selected, characterWeight);
 	}
 
-	internal static PlayerRuneCharacterPool? GetRuneCharacterPool(Player player)
+	// 原版五个角色都有专属池；其他角色（模组角色）登记过专属符文（SetPlayerRuneCharacter）才参与加权，
+	// 否则返回 null，权重进度也不推进。
+	internal static ModelId? GetRuneCharacterId(Player player)
 	{
-		return HextechPlayerContextHelper.TryGetRuneCharacterPool(player, out PlayerRuneCharacterPool characterPool)
-			? characterPool
+		ModelId characterId = player.Character.Id;
+		return HextechPlayerContextHelper.TryGetRuneCharacterPool(player, out _)
+			|| HextechExternalContentRegistry.HasPlayerRunesForCharacter(characterId)
+			? characterId
 			: null;
 	}
 
-	internal static bool IsRuneForCharacter(RelicModel relic, PlayerRuneCharacterPool? characterPool)
+	internal static bool IsRuneForCharacter(RelicModel relic, ModelId? characterId)
 	{
-		return characterPool.HasValue
-			&& HextechContentRegistry.PlayerRuneMetadata.TryGetRegistration(
+		if (characterId == null)
+		{
+			return false;
+		}
+
+		if (HextechContentRegistry.PlayerRuneMetadata.TryGetRegistration(
 				(relic.CanonicalInstance ?? relic).GetType(),
 				out PlayerRuneRegistration registration)
-			&& registration.CharacterPool == characterPool;
+			&& registration.CharacterPool is PlayerRuneCharacterPool characterPool
+			&& HextechPlayerContextHelper.GetCharacterId(characterPool) == characterId)
+		{
+			return true;
+		}
+
+		return HextechExternalContentRegistry.GetPlayerRuneCharacterId(relic.CanonicalId()) == characterId;
 	}
 
 	private static int GetRuneTagWeight(RelicModel relic, IReadOnlyDictionary<string, int> tagCounts, bool useEndlessTagWindow)

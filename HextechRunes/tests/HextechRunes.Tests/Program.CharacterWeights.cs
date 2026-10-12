@@ -5,20 +5,22 @@ namespace HextechRunes.Tests;
 
 internal static partial class Program
 {
+	private static ModelId IroncladId => ModelDb.GetId<MegaCrit.Sts2.Core.Models.Characters.Ironclad>();
+
 	[HextechTest]
 	private static void CharacterWeightUsesSequentialAdditiveSteps()
 	{
 		RelicModel[] candidates = [new BerserkRune(), new JudicatorRune()];
 		Dictionary<string, int> tags = [];
 		int weight = HextechWeightedRuneOptions.InitialCharacterWeightPercent;
-		List<int> weights = HextechRunePoolBuilder.BuildSelectionWeights(candidates, tags, false, PlayerRuneCharacterPool.Ironclad, weight, out int total);
+		List<int> weights = HextechRunePoolBuilder.BuildSelectionWeights(candidates, tags, false, IroncladId, weight, out int total);
 		SequenceEqual(new[] {15000, 10000}, weights, "initial relative weights are 150% and 100%");
 		Equal(25000, total, "weighted pool total");
 		Equal(0, HextechRunePoolBuilder.SelectWeightedIndex(weights, 14999), "character interval end");
 		Equal(1, HextechRunePoolBuilder.SelectWeightedIndex(weights, 15000), "generic remains possible in the first slot");
 		weight = HextechWeightedRuneOptions.Advance(weight, false);
 		Equal(160, weight, "generic adds ten percentage points, not ten percent multiplication");
-		weights = HextechRunePoolBuilder.BuildSelectionWeights(candidates, tags, false, PlayerRuneCharacterPool.Ironclad, weight, out _);
+		weights = HextechRunePoolBuilder.BuildSelectionWeights(candidates, tags, false, IroncladId, weight, out _);
 		SequenceEqual(new[] {16000, 10000}, weights, "next draw immediately uses increased weight");
 		weight = HextechWeightedRuneOptions.Advance(weight, true);
 		Equal(150, weight, "character subtracts ten without resetting");
@@ -28,16 +30,16 @@ internal static partial class Program
 			weight = HextechWeightedRuneOptions.Advance(weight, true);
 		}
 		Equal(0, weight, "lower bound prevents negative weights");
-		weights = HextechRunePoolBuilder.BuildSelectionWeights(candidates, tags, false, PlayerRuneCharacterPool.Ironclad, weight, out total);
+		weights = HextechRunePoolBuilder.BuildSelectionWeights(candidates, tags, false, IroncladId, weight, out total);
 		SequenceEqual(new[] {0, 10000}, weights, "zero weight skips characters when generic candidates exist");
 		Equal(1, HextechRunePoolBuilder.SelectWeightedIndex(weights, 0), "zero weight cannot win");
 		Equal(10, HextechWeightedRuneOptions.Advance(weight, false), "generic recovers from zero");
-		HextechRunePoolBuilder.BuildSelectionWeights([candidates[0]], tags, false, PlayerRuneCharacterPool.Ironclad, 0, out total);
+		HextechRunePoolBuilder.BuildSelectionWeights([candidates[0]], tags, false, IroncladId, 0, out total);
 		Expect(total > 0, "character-only configurations cannot deadlock at zero");
 		weights = HextechRunePoolBuilder.BuildSelectionWeights(candidates, tags, false, null, 9990, out _);
 		SequenceEqual(new[] {10000, 10000}, weights, "unmapped characters use generic weights");
 		tags[HextechCatalog.GetPlayerRuneTagKey(candidates[0])] = 1;
-		weights = HextechRunePoolBuilder.BuildSelectionWeights([candidates[0]], tags, false, PlayerRuneCharacterPool.Ironclad, 150, out _);
+		weights = HextechRunePoolBuilder.BuildSelectionWeights([candidates[0]], tags, false, IroncladId, 150, out _);
 		Equal(18750, weights[0], "existing tag bonus multiplies without truncating half points");
 	}
 
