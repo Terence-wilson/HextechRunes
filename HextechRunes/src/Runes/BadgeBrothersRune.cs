@@ -22,7 +22,9 @@ public sealed class BadgeBrothersRune : HextechRelicBase
 		}
 
 		Flash();
+		await HextechCombatVfx.BadgeBrothersSlam<FreeAttackPower>(Owner.Creature, -1f);
 		await PowerCmd.Apply<FreeAttackPower>(Owner.Creature, DynamicVars["FreeAttackPower"].BaseValue, Owner.Creature, null);
+		await HextechCombatVfx.BadgeBrothersSlam<FreeSkillPower>(Owner.Creature, 1f);
 		await PowerCmd.Apply<FreeSkillPower>(Owner.Creature, DynamicVars["FreeSkillPower"].BaseValue, Owner.Creature, null);
 	}
 }

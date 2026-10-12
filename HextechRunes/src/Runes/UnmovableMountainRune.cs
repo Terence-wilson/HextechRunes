@@ -22,7 +22,9 @@ public sealed class UnmovableMountainRune : HextechRelicBase
 		}
 
 		Flash();
+		await HextechCombatVfx.UnmovableMountainShell(Owner.Creature);
 		await PowerCmd.Apply<BarricadePower>(Owner.Creature, DynamicVars["BarricadePower"].BaseValue, Owner.Creature, null);
+		await HextechCombatVfx.UnmovableMountainAfterimage(Owner.Creature);
 		await PowerCmd.Apply<AfterimagePower>(Owner.Creature, DynamicVars["AfterimagePower"].BaseValue, Owner.Creature, null);
 	}
 }

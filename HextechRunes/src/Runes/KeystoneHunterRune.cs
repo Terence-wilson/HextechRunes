@@ -27,6 +27,7 @@ public sealed class KeystoneHunterRune : HextechRelicBase
 		}
 
 		Flash();
+		await HextechCombatVfx.KeystoneHunterBlueprint(Owner.Creature);
 		await PowerCmd.Apply<ToolsOfTheTradePower>(Owner.Creature, DynamicVars["ToolsOfTheTradePower"].BaseValue, Owner.Creature, null);
 		await PowerCmd.Apply<MasterPlannerPower>(Owner.Creature, DynamicVars["MasterPlannerPower"].BaseValue, Owner.Creature, null);
 	}

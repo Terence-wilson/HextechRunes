@@ -185,6 +185,8 @@ ui.rune-config-menu | MegaCrit.Sts2.Core.Nodes.Screens.MainMenu.NMainMenu._Ready
 ui.safety.card-play-queue | MegaCrit.Sts2.Core.Nodes.Combat.NCardPlayQueue.BeforeRemoteCardPlayResumedAfterPlayerChoice(*) | prefix?(200)
 ui.safety.multiplayer-intent | MegaCrit.Sts2.Core.Nodes.Multiplayer.NMultiplayerPlayerIntentHandler.BeforeActionReadyToResumeAfterPlayerChoice(*) | prefix?(200)
 ui.safety.newly-acquired-animation | MegaCrit.Sts2.Core.Nodes.Relics.NRelicInventoryHolder.PlayNewlyAcquiredAnimation(Nullable`1,Nullable`1) | postfix(400) prefix?(200)
+visual.combat-vfx.power-fly-curve | MegaCrit.Sts2.Core.Nodes.Vfx.NCardFlyPowerVfx.Create(*) | postfix(400)
+visual.combat-vfx.power-fly-fan | MegaCrit.Sts2.Core.Nodes.Vfx.NCardFlyPowerVfx._Ready(*) | postfix(400)
 visual.combat-vfx.soul-drain | MegaCrit.Sts2.Core.Nodes.Combat.NCreature.StartDeathAnim(Boolean) | postfix(400)
 visual.host.add-creature | MegaCrit.Sts2.Core.Nodes.Rooms.NCombatRoom.AddCreature(Creature) | postfix(400)
 visual.host.creature-ready | MegaCrit.Sts2.Core.Nodes.Combat.NCreature._Ready() | postfix(400)
