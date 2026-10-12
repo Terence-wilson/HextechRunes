@@ -44,7 +44,9 @@ internal static partial class HextechRuneConfiguration
 		// 只禁用我方；敌方"无本万利"不受影响。
 		new(37, [], [ typeof(SomethingForNothingRune), typeof(SoulCallingRune) ]),
 		new(39, [], [ typeof(GhostFormRune), typeof(DieForYouRune) ]),
-		new(40, [], [ typeof(SearingAttackRune), typeof(ScapegoatRune), typeof(TwilightVeilRune) ])
+		new(40, [], [ typeof(SearingAttackRune), typeof(ScapegoatRune), typeof(TwilightVeilRune) ]),
+		// 大地苏醒重做为"每抽 8 张牌获得 5 层滚石"并合并到同一块滚石上，转为默认启用。
+		new(41, [ typeof(EarthAwakensRune) ], [])
 	];
 
 	/// <summary>敌方海克斯默认禁用迁移:只迁移一次,之后尊重玩家手动开启。</summary>

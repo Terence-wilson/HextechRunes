@@ -15,7 +15,7 @@ internal sealed class ThornmailEnemyHex : HextechEnemyHexEffect
 			creature,
 			replayOneShotPowers))
 		{
-			await HextechEnemyPowerScalingHooks.Apply<ThornsPower>(creature, context.TierValue(Kind, 0, 1, 2), creature, null);
+			await HextechEnemyPowerScalingHooks.Apply<ThornsPower>(creature, context.TierValue(Kind, 0, 1, 1), creature, null);
 		}
 	}
 }

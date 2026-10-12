@@ -10,6 +10,15 @@ namespace HextechRunes;
 /// </summary>
 internal static class HextechStarterUpgradeHelper
 {
+	/// <summary>本场战斗里这张牌库牌（任一战斗副本）是否已被该玩家打出过；与胜利后升级的去重口径相同。</summary>
+	public static bool WasDeckCardPlayedThisCombat(CardModel deckCard, ulong ownerNetId)
+	{
+		return CombatManager.Instance.History.Entries
+			.OfType<CardPlayFinishedEntry>()
+			.Any(entry => entry.CardPlay.Card.Owner?.NetId == ownerNetId
+				&& ReferenceEquals(entry.CardPlay.Card.DeckVersion ?? entry.CardPlay.Card, deckCard));
+	}
+
 	public static Task UpgradePlayedBasicCards(HextechRelicBase rune, Player? owner, CombatRoom room, Func<CardModel, bool> isTargetCard)
 	{
 		if (owner == null || owner.Creature.IsDead)

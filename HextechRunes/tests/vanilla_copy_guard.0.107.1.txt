@@ -127,3 +127,7 @@ MegaCrit.Sts2.Core.Models.MonsterModel+<PerformMove>d__103::MoveNext()=b35e216ec
 MegaCrit.Sts2.Core.Models.MonsterModel::PerformMove()=0c20b4b3f30493f0768e67d6e061cad1c3904458
 MegaCrit.Sts2.Core.Models.Cards.Reboot::OnPlay(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Cards.CardPlay)=22b7263edc8c2c6528fb3022ee5c9826c11b8b4e
 MegaCrit.Sts2.Core.Models.Cards.Reboot+<OnPlay>d__5::MoveNext()=99757acf309ab11813babfef75d779bc141742ce
+MegaCrit.Sts2.Core.Models.Powers.RollingBoulderPower::AfterPlayerTurnStart(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Players.Player)=124020b962e1ffa08cfc54f337c35bf2923d005c
+MegaCrit.Sts2.Core.Entities.Orbs.OrbQueue::SmallWait()=67768e3126e04987847b8017a0f1089adfd10db6
+MegaCrit.Sts2.Core.Entities.Orbs.OrbQueue+<SmallWait>d__18::MoveNext()=9773d26da0217a3a44a693597bc34d0f3e678ceb
+MegaCrit.Sts2.Core.Models.Powers.RollingBoulderPower+<AfterPlayerTurnStart>d__8::MoveNext()=dd1060b150f27f4ab1bf3e7fc09903bb0df2714d

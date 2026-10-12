@@ -43,6 +43,15 @@
 - **储君海克斯（无瑕、三棱镜、空白支票）判定"无色牌"与原版传家宝锤相同：`VisualCardPool.IsColorless`。** 君王之剑、仆从牌、小刀等衍生牌、事件牌都算无色，不再维护模组自己的名单；第三方卡池按其自身的 `IsColorless`。`HextechColorlessCardHelper`
 - **属性转换类符文（敏捷转力量、力量转敏捷、亮出你的剑、敏捷力量转集中）只认原版施加管线登记过的那次施加。** 原版 `PowerCmd.Apply` / `ModifyAmount` 先调 `BeforePowerAmountChanged` 再问接收修正，传同一个能力实例，随机数预测不调本模组的 Before 钩子；登记按后进先出存放（施加可能嵌套），接收修正遇到登记过的实例就消费掉——即使前面的修正器（如人工制品）已把接收量改成 0；原版在 After 回调前那段 0.1–0.25 秒的等待里，模拟调用改写不了已记下的待转换量。查询本身照常返回 0，预览结果不变。`AttributeConversionRelicBase`
 
+- **吸血习性（`DeathHarvestRune`，类名与配置 ID 沿用重做前的“死亡收割”）禁止持有者的其他回血，但放行当前生命为 0 的复活类回血。** 复活效果（原版 `LizardTail`、`FairyInABottle` 一类）靠治疗把角色拉回；把这次治疗吞掉会留下消耗了复活、0 生命却存活的状态。本符文自己的回血用调用期间的静态标记放行（`Heal` 前缀在调用时同步执行，调用返回即复位）；队友与宠物的回血不受影响。`DeathHarvestRune.BlocksHeal`、`HextechCombatHooks.HealPatch`
+
+- **大地苏醒每次新增一块初始 5 层的滚石（原版 Instanced），回合开始时所有滚石一起滚。** 原版每块滚石各自播放动画并等它结束，Hook 逐个等待，几块就依次滚几遍。持有本符文且有两块以上滚石时，第一块被调用时一起滚全部（彼此错开 0.08 秒，最多错开 8 块），同一次分发（原版对所有监听者传同一个 choiceContext）里其余滚石跳过。伤害不按各块动画各自碰撞结算：每个敌人第一次被任意一块碰到时，按滚石顺序依次结算全部滚石对它的伤害，顺序只取决于滚石顺序和敌人站位，不受各端帧时间影响。`EarthAwakensRune.RollTogetherPatch`
+
+- **科学狂人持有者的充能球超过 10 个时，每个球触发后的表现等待按 10/球数 压缩，整串触发总时长与 10 个球时相同。** 原版每次被动触发后本机等 0.1～0.25 秒（随游戏速度缩放）、其他玩家等 0.05 秒，写死在方法里；0.110 起在 `OrbModel.TriggerPassive`，0.107.1 在私有 `OrbQueue.SmallWait`（该版本生成充能球后的等待也走它，一并压缩）。只改等待时长，不改触发次数与顺序；联机两端的等待原本就不同，不影响同步。`MadScientistRune.MadScientistOrbWaitPatch`
+
+- **升级打击/防御放开上限后，“镜中倒影”与敌方“神化”的降级只降一级，其余降级（魔法骑士 `DampenPower`、`WelcomeToWongos` 等）照原版清零。** 原版所有降级都走 `CardCmd.Downgrade` 并清零，调用方不可区分；`Reflections.TouchAMirror` 的状态机单步与 `UpgradeEnemyHex` 的同步调用期间进入降一级作用域（`[ThreadStatic]` 计数，不跨 await），`CardCmd.Downgrade` 的前缀记下“原等级 - 1”、原版照常清零后由后缀按原版读档同口径逐级升回。不跳过原版，降级记录与 `DowngradeInternal` 的重建保持原样。`HextechStarterUpgradeHooks.SteppedDowngradePatch`
+- **升级打击/防御持有者手牌里本场未打出过的牌库打击/防御显示原版金色高亮。** 通过 `CardModel.ShouldGlowGold` 后缀实现，去重口径与胜利后升级相同（按 `DeckVersion`，战斗中生成的临时牌不发光）；手牌高亮只在牌面刷新时读取，所以每次直接扫描本场出牌历史，不另建缓存。纯本机表现。`HextechStarterUpgradeHooks.UnplayedGoldGlowPatch`
+
 ## 敌方海克斯
 
 - **`MonsterHexKind` 一律尾部追加，不重排旧编号。** 编号是保存与联机契约。
