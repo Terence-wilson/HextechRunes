@@ -6,7 +6,7 @@ internal sealed class DeathHarvestEnemyHex : HextechEnemyHexEffect
 
 	internal override async Task AfterEnemyDamageGivenImmediate(HextechEnemyHexContext context, Creature dealer, DamageResult result, Creature target, CardModel? cardSource)
 	{
-		// 敌人对玩家造成的未格挡伤害,按 tier 比例回复自身生命(全程,无回合限制)。
+		// 吸血习性：敌人对玩家造成的未格挡伤害,按 tier 比例回复自身生命(全程,无回合限制)。
 		if (result.UnblockedDamage <= 0 || target.Player == null || !dealer.IsAlive)
 		{
 			return;

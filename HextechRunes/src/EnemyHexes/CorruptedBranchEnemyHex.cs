@@ -18,7 +18,7 @@ internal sealed class CorruptedBranchEnemyHex : HextechEnemyHexEffect
 		int index = HextechStableRandom.Index(context.RunState, HextechEnemyStatusCards.Count,
 			"enemy-corrupted-branch-status", HextechStableRandom.PlayerKey(owner), ordinal.ToString());
 		await HextechCardGeneration.AddGeneratedCardToCombat(
-			HextechEnemyStatusCards.Create(combatState, owner, index), PileType.Draw,
+			HextechEnemyStatusCards.Create(combatState, owner, index), PileType.Discard,
 			addedByPlayer: false, CardPilePosition.Random);
 	}
 }

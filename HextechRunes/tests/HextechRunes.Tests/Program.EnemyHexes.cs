@@ -514,7 +514,7 @@ internal static partial class Program
 			teammateSource.Owner = second;
 			effect.AfterCardExhausted(context, null!, teammateSource, false).GetAwaiter().GetResult();
 			Equal(4, EnemyBranchGenerated.Count, "one status per actual exhaust, including ethereal");
-			Expect(EnemyBranchGenerated.All(row => row.Pile == PileType.Draw && pool.Contains(row.Card.GetType())), "only fixed status pool into draw pile");
+			Expect(EnemyBranchGenerated.All(row => row.Pile == PileType.Discard && pool.Contains(row.Card.GetType())), "only fixed status pool into discard pile");
 			Expect(EnemyBranchGenerated.Take(3).All(row => row.Card.Owner == first) && EnemyBranchGenerated[^1].Card.Owner == second, "each status belongs to the exhausting player");
 			Equal(2, HextechCombatProcTracker.GetPlayerRuneProcsInCombat(context.Tracking, first, nameof(CorruptedBranchEnemyHex)), "first player counter");
 			Equal(1, HextechCombatProcTracker.GetPlayerRuneProcsInCombat(context.Tracking, second, nameof(CorruptedBranchEnemyHex)), "independent teammate counter");

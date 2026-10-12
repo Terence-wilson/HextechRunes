@@ -258,7 +258,7 @@ internal static class HextechPlayerRuneRegistry
 		Rune<DrawYourSwordRune>(HextechRarityTier.Prismatic, flags: PlayerRuneFlags.AttributeConversionExclusive, characterPool: PlayerRuneCharacterPool.Defect, characterOrder: 25, tagKey: "ORB"),
 		Rune<FeelTheBurnRune>(HextechRarityTier.Prismatic, tagKey: "OUTPUT"),
 		Rune<MikaelsBlessingRune>(HextechRarityTier.Prismatic),
-		Rune<EarthAwakensRune>(HextechRarityTier.Prismatic, flags: PlayerRuneFlags.Disabled, tagKey: "OUTPUT"),
+		Rune<EarthAwakensRune>(HextechRarityTier.Prismatic, tagKey: "OUTPUT"),
 		Rune<CorruptedBranchRune>(HextechRarityTier.Prismatic, tagKey: "EXHAUST"),
 		Rune<SymphonyOfWarRune>(HextechRarityTier.Prismatic, tagKey: "OUTPUT"),
 		Rune<UnmovableMountainRune>(HextechRarityTier.Prismatic, tagKey: "SURVIVAL"),

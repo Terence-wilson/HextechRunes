@@ -12,7 +12,8 @@ internal sealed class UpgradeEnemyHex : HextechEnemyHexEffect
 			return Task.CompletedTask;
 		}
 
-		CardCmd.Downgrade(cardPlay.Card);
+		// 放开上限的多级打击/防御只降一级（升级：打击/防御）；其余牌照原版清零。
+		HextechStarterUpgradeHooks.DowngradeOneLevel(cardPlay.Card);
 		return Task.CompletedTask;
 	}
 }

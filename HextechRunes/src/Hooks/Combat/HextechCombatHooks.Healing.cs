@@ -105,6 +105,11 @@ internal static partial class HextechCombatHooks
 			}
 
 			Player? player = creature.Player;
+			if (DeathHarvestRune.BlocksHeal(player, creature))
+			{
+				return SkipHeal(ref __result);
+			}
+
 			if (player != null && creature == player.Creature)
 			{
 				amount *= HextechPlayerCoefficientHelper.GetHealingMultiplier(player);
