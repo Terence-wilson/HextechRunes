@@ -61,14 +61,6 @@ internal static partial class HextechRuneSelectionCoordinator
 			return;
 		}
 
-		if (HextechPresetChallengeRegistry.IsActive(runState)
-			&& !HextechPresetChallengeRegistry.TryGetActPlan(runState, actIndex, out _))
-		{
-			await CompleteStageAsync(runState, modifier, actIndex, modifier.GetActiveMonsterHexesBeforeAct(actIndex));
-			HextechLog.Info("Challenge", $"Skipped acquisition after the three preset acts: act={actIndex}");
-			return;
-		}
-
 		_actSelectionRun = runState;
 		bool reopenMapAfterSelection = false;
 		// 表现层要求保持地图打开时，本体界面会在显示前自行关闭地图（见 CloseMapBeforeOwnScreen），结束时同样要重新打开。
@@ -220,8 +212,7 @@ internal static partial class HextechRuneSelectionCoordinator
 		HashSet<ulong> playersNotifiedNoOptions = [];
 		for (int choiceOrdinal = 0; choiceOrdinal < playerHexCount; choiceOrdinal++)
 		{
-			bool allowEnemyHexAdjustment = choiceOrdinal == 0
-				&& !HextechPresetChallengeRegistry.IsActive(runState);
+			bool allowEnemyHexAdjustment = choiceOrdinal == 0;
 			if (HextechPlayerContextHelper.IsSinglePlayerFlow(gameType))
 			{
 				foreach (Player player in runState.Players)
@@ -251,8 +242,8 @@ internal static partial class HextechRuneSelectionCoordinator
 
 		if (playerHexCount <= 0)
 		{
-			// 没有玩家选择时仍要给敌方新增海克斯一个确认/调整界面;预设挑战的敌方固定,不调整。
-			if (stageHexes.New.Count > 0 && !HextechPresetChallengeRegistry.IsActive(runState))
+			// 没有玩家选择时仍要给敌方新增海克斯一个确认/调整界面。
+			if (stageHexes.New.Count > 0)
 			{
 				stageHexes.SetNew(await SelectEnemyHexesOnly(runState, modifier, actIndex, rarity, stageHexes.Previous, stageHexes.New));
 			}
