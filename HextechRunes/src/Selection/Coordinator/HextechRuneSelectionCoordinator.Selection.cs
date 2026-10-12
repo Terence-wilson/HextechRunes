@@ -62,6 +62,8 @@ internal static partial class HextechRuneSelectionCoordinator
 		}
 
 		HashSet<ModelId> seenOptionIds = CreateSeenOptionIds(options, modifier.GetSeenPlayerRuneIds(player));
+		// 本幕品级在幕开始时已定并存档（联机为房主同步值）；保底格刷新按它抽，不受其他格刷新的影响。
+		HextechRarityTier? stageRarity = modifier.GetRarityForAct(actIndex);
 		HextechGoldenRerollSession goldenReroll = CreateGoldenRerollSession(
 			modifier,
 			player,
@@ -78,6 +80,7 @@ internal static partial class HextechRuneSelectionCoordinator
 				rerollOrdinal,
 				seenOptionIds,
 				multiplayerOfferedOptionIds,
+				stageRarity,
 				GetGoldenRerollOverride(goldenReroll))
 			: (relics, slotIndex, rerollOrdinal) => RerollSingleOptionAndTrack(
 				modifier,
@@ -85,6 +88,7 @@ internal static partial class HextechRuneSelectionCoordinator
 				relics,
 				slotIndex,
 				seenOptionIds,
+				stageRarity,
 				GetGoldenRerollOverride(goldenReroll),
 				rerollOrdinal);
 		return await CreateRuneSelectionScreenAsync(

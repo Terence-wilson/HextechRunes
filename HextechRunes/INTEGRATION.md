@@ -97,7 +97,7 @@ public static void RegisterPlayerRune(
 
 适合角色专属联动符文：玩家用对应角色时，每幕第一次海克斯三选一里必定出现其中一个。
 
-- 只作用于每一幕（包括额外阶段）的第一次三选一。同一幕的后续选择、预设挑战、锻造器选择不触发。
+- 只作用于每一幕（包括额外阶段）的第一次三选一。同一幕的后续选择、锻造器选择不触发。
 - 从带这个标志、且当前玩家能拿到的符文里挑一个，不受这一幕品级的限制。“能拿到”与普通候选池的判断相同：`isAvailableForPlayer` 返回 true、这一幕允许出现、玩家还没有、不与已有海克斯互斥、没有在配置里被关掉。一个都拿不到时，这一幕不保底。
 - 优先挑本局还没出现过的；全部出现过时，从全部里挑。挑选用种子稳定随机，联机各端结果一致，也不消耗游戏的随机数。
 - 保底符文放在最后一格。正常抽出的候选里已经有带这个标志的符文时，不再替换。
@@ -341,7 +341,7 @@ sealed class MyPresenter : IHextechSelectionPresenter
 - Rarity, flag and character pool arguments are enum *names* (case-insensitive): `Silver|Gold|Prismatic`; comma-separated `Disabled, FirstActExcluded, ThirdActExcluded, SelectionExcluded, AttributeConversionExclusive, GuaranteedFirstPick` (the last one needs `ApiVersion >= 2`); `Ironclad|Silent|Regent|Defect|Necrobinder` or `null`.
 - Registered runes are kept out of vanilla natural relic generation, are skipped by Double Vision, and appear under the Hextech category in the compendium and in the config menu.
 - UI labels: `SetPlayerRunePoolLabel(Type runeType, string poolKey)` picks the source pill on the selection screen (`HEXTECH_POOL.<poolKey>`; defaults to the character pool or `GENERIC`), and `RegisterConfigSectionTitle(string assetModId, string titleKey)` picks the config-menu group heading for everything registered with that `assetModId`. Put the texts in your mod's `relic_collection.json` (only vanilla table names are merged); a missing key is shown as the raw key instead of throwing. Tag pills read `HEXTECH_TAG.<tagKey>` the same way.
-- `GuaranteedFirstPick` (ApiVersion 2): the first rune selection of every act (extra acts included; not preset challenges) always offers one available flagged rune in the last slot, ignoring the act's rarity. Availability uses the normal filters (your predicate, act exclusions, owned/mutually exclusive, config-disabled); unseen runes are preferred, the pick is seed-stable and identical on every client. Rerolling that slot draws from the act's normal pool.
+- `GuaranteedFirstPick` (ApiVersion 2): the first rune selection of every act (extra acts included) always offers one available flagged rune in the last slot, ignoring the act's rarity. Availability uses the normal filters (your predicate, act exclusions, owned/mutually exclusive, config-disabled); unseen runes are preferred, the pick is seed-stable and identical on every client. Rerolling that slot draws from the act's normal pool.
 - `SetPlayerRuneCharacter(Type runeType, Type characterType)` (ApiVersion 2) marks a rune as belonging to a non-vanilla character so it gets the same 150% character weight that `characterPool` gives vanilla characters. Weight only; restrict who can get it with `isAvailableForPlayer`.
 - `isAvailableForPlayer` runs on every client and must be deterministic over synchronized state; a throwing predicate excludes the rune.
 - Hard-dependency helpers on `HextechRunesApi` also include `RegisterForgeShopPriceModifier(Func<RunState, int, int>)` (random-forge shop price modifiers, applied in registration order), `IsHextechRelic(RelicModel?)` (registry-based ownership check) and `StableIndex(RunState, int count, params string?[] salt)` (seed-stable index that never consumes shared RNG).

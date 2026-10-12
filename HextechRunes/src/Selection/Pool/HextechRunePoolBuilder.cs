@@ -191,20 +191,14 @@ internal static class HextechRunePoolBuilder
 
 	/// <summary>
 	/// 重随某一格时按哪个品级抽：通常是这一格自己的品级；保底符文的品级可能与本幕不同，
-	/// 重随它时改按其他（非保底）候选的品级，回到本幕的正常随机池。
+	/// 重随它时改按本幕品级（幕开始时已定），回到本幕的正常随机池。不从相邻候选反推：
+	/// 相邻格可能已被金色重随升级。
 	/// </summary>
-	internal static HextechRarityTier GetRerollRarity(IReadOnlyList<RelicModel> options, int slotIndex)
+	internal static HextechRarityTier GetRerollRarity(IReadOnlyList<RelicModel> options, int slotIndex, HextechRarityTier? stageRarity)
 	{
-		if (IsGuaranteedFirstPickRune(options[slotIndex]))
-		{
-			RelicModel? regular = options.Where((relic, index) => index != slotIndex && !IsGuaranteedFirstPickRune(relic)).FirstOrDefault();
-			if (regular != null)
-			{
-				return GetRarityForOptions([ regular ]);
-			}
-		}
-
-		return GetRarityForOptions([ options[slotIndex] ]);
+		return stageRarity is HextechRarityTier rarity && IsGuaranteedFirstPickRune(options[slotIndex])
+			? rarity
+			: GetRarityForOptions([ options[slotIndex] ]);
 	}
 
 	/// <summary>

@@ -354,7 +354,7 @@ internal static partial class HextechRuneSelectionCoordinator
 		return true;
 	}
 
-	// 每幕首次三选一加入保底候选（PlayerRuneFlags.GuaranteedFirstPick）；预设挑战按挑战设定发放，不加保底。
+	// 每幕首次三选一加入保底候选（PlayerRuneFlags.GuaranteedFirstPick）。
 	// 单机与联机共用，联机各端用同样的已见记录各自算出同一个结果。
 	private static List<RelicModel> ApplyStageGuaranteedPick(
 		RunState runState,
@@ -364,7 +364,7 @@ internal static partial class HextechRuneSelectionCoordinator
 		IReadOnlySet<ModelId> seenIds,
 		List<RelicModel> options)
 	{
-		return choiceOrdinal == 0 && !HextechPresetChallengeRegistry.IsActive(runState)
+		return choiceOrdinal == 0
 			? ApplyGuaranteedFirstPick(player, runState, actIndex, seenIds, options)
 			: options;
 	}
