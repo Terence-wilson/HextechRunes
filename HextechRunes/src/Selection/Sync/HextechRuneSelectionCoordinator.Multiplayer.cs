@@ -238,6 +238,7 @@ internal static partial class HextechRuneSelectionCoordinator
 				actIndex,
 				excludedIds,
 				useEndlessTagWindow: modifier.IsEndlessLoopActive);
+			options = ApplyStageGuaranteedPick(runState, player, actIndex, choiceOrdinal, excludedIds, options);
 			if (options.Count == 0)
 			{
 				HextechLog.Warn("Mayhem", $"No rune options for player={player.NetId} act={actIndex} ordinal={choiceOrdinal} rarity={rarity}; skipping this selection.");

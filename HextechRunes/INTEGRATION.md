@@ -23,6 +23,9 @@
 | ApiVersion | 内容 |
 | --- | --- |
 | 1 | `RegisterPlayerRune`、`SetPlayerRunePoolLabel`、`RegisterConfigSectionTitle`、`RegisterExtraActProvider` |
+| 2 | `RegisterPlayerRune` 的 `flags` 新增 `GuaranteedFirstPick`；新增 `SetPlayerRuneCharacter` |
+
+旧版本不认识 `GuaranteedFirstPick`，传进去会抛 `ArgumentException`。用到它之前先确认 `ApiVersion >= 2`，否则不带这个标志注册。
 
 ### 注册时机
 
@@ -72,7 +75,7 @@ public static void RegisterPlayerRune(
 | --- | --- |
 | `runeType` | 你的符文类型 |
 | `rarity` | 海克斯品级：`Silver` / `Gold` / `Prismatic`（不区分大小写，不接受数字） |
-| `flags` | 逗号分隔的标志名，可以为 `null`：`Disabled`（默认在配置里关闭）、`FirstActExcluded`（第一幕不出现）、`ThirdActExcluded`（第三幕不出现，装了无尽模组时不生效）、`SelectionExcluded`（不进三选一和配置菜单，只能通过你自己的途径发放）、`AttributeConversionExclusive`（属性转换互斥组） |
+| `flags` | 逗号分隔的标志名，可以为 `null`：`Disabled`（默认在配置里关闭）、`FirstActExcluded`（第一幕不出现）、`ThirdActExcluded`（第三幕不出现，装了无尽模组时不生效）、`SelectionExcluded`（不进三选一和配置菜单，只能通过你自己的途径发放）、`AttributeConversionExclusive`（属性转换互斥组）、`GuaranteedFirstPick`（每幕首次三选一保底，见下文，需要 `ApiVersion >= 2`） |
 | `characterPool` | 角色专属池：`Ironclad` / `Silent` / `Regent` / `Defect` / `Necrobinder`；`null` 为通用 |
 | `characterOrder` | 角色池内的排序 |
 | `tagKey` | 海克斯标签，`null` 为 `COMPREHENSIVE`，可选值见“标签”一节 |
@@ -89,6 +92,30 @@ public static void RegisterPlayerRune(
 
 - 联机时两端都会执行这个委托，且必须得出同样的结果。只能读同步状态，例如 `Player` 的角色、遗物、牌组和 RunState；不要读本地设置、UI 或随机数。
 - 委托抛出异常时，该符文按不可用处理，并记一条警告，两端的候选池因此仍然一致。
+
+### GuaranteedFirstPick（每幕首次三选一保底）
+
+适合角色专属联动符文：玩家用对应角色时，每幕第一次海克斯三选一里必定出现其中一个。
+
+- 只作用于每一幕（包括额外阶段）的第一次三选一。同一幕的后续选择、锻造器选择不触发。
+- 从带这个标志、且当前玩家能拿到的符文里挑一个，不受这一幕品级的限制。“能拿到”与普通候选池的判断相同：`isAvailableForPlayer` 返回 true、这一幕允许出现、玩家还没有、不与已有海克斯互斥、没有在配置里被关掉。一个都拿不到时，这一幕不保底。
+- 优先挑本局还没出现过的；全部出现过时，从全部里挑。挑选用种子稳定随机，联机各端结果一致，也不消耗游戏的随机数。
+- 保底符文放在最后一格。正常抽出的候选里已经有带这个标志的符文时，不再替换。
+- 刷新保底那一格时，按这一幕原本的品级从普通候选池里重新抽，之后照常刷新。
+- 限制“哪个角色能拿到”仍然靠 `isAvailableForPlayer`，这个标志本身不看角色。
+
+### SetPlayerRuneCharacter
+
+```csharp
+public static void SetPlayerRuneCharacter(Type runeType, Type characterType);
+```
+
+需要 `ApiVersion >= 2`。指定符文所属的角色，给原版五个角色池以外的角色（例如你的模组角色）使用。三选一里，玩家当前角色的专属符文权重是通用符文的 150%（之后每抽到一个专属符文降 10 个百分点，每抽到一个通用符文升 10 个百分点）；原版角色靠 `characterPool` 标记专属符文，模组角色用这个方法标记。
+
+- `characterType` 是你的 `CharacterModel` 子类，`runeType` 是已注册（或即将注册）的符文类型，调用顺序不限。
+- 只影响权重，不限制谁能拿到。限制发放请用 `isAvailableForPlayer`。
+- 以第一次登记为准，之后的登记只在日志里警告。类型不对时抛 `ArgumentException`。
+- 联机两端要有同样的登记，所以只在模组初始化时调用。
 
 ### SetPlayerRunePoolLabel 与 RegisterConfigSectionTitle
 
@@ -311,9 +338,11 @@ sealed class MyPresenter : IHextechSelectionPresenter
 
 - Soft dependency (no reference to `HextechRunes.dll`): reflect on `HextechRunes.HextechRunesInterop` in the assembly named `HextechRunes`, check the `ApiVersion` property (≥ 1; available since 0.9.7), then call `RegisterPlayerRune(Type runeType, string rarity, string? flags, string? characterPool, int characterOrder, string? tagKey, string? assetModId, Func<Player, bool>? isAvailableForPlayer)` during mod initialization.
 - The rune only needs to derive from `RelicModel`, but its `Rarity` **must** be `RelicRarity.Starter`; non-Starter external runes are never granted. Provide your own icons via `PackedIconPath` / `PackedIconOutlinePath` / `BigIconPath`.
-- Rarity, flag and character pool arguments are enum *names* (case-insensitive): `Silver|Gold|Prismatic`; comma-separated `Disabled, FirstActExcluded, ThirdActExcluded, SelectionExcluded, AttributeConversionExclusive`; `Ironclad|Silent|Regent|Defect|Necrobinder` or `null`.
+- Rarity, flag and character pool arguments are enum *names* (case-insensitive): `Silver|Gold|Prismatic`; comma-separated `Disabled, FirstActExcluded, ThirdActExcluded, SelectionExcluded, AttributeConversionExclusive, GuaranteedFirstPick` (the last one needs `ApiVersion >= 2`); `Ironclad|Silent|Regent|Defect|Necrobinder` or `null`.
 - Registered runes are kept out of vanilla natural relic generation, are skipped by Double Vision, and appear under the Hextech category in the compendium and in the config menu.
 - UI labels: `SetPlayerRunePoolLabel(Type runeType, string poolKey)` picks the source pill on the selection screen (`HEXTECH_POOL.<poolKey>`; defaults to the character pool or `GENERIC`), and `RegisterConfigSectionTitle(string assetModId, string titleKey)` picks the config-menu group heading for everything registered with that `assetModId`. Put the texts in your mod's `relic_collection.json` (only vanilla table names are merged); a missing key is shown as the raw key instead of throwing. Tag pills read `HEXTECH_TAG.<tagKey>` the same way.
+- `GuaranteedFirstPick` (ApiVersion 2): the first rune selection of every act (extra acts included) always offers one available flagged rune in the last slot, ignoring the act's rarity. Availability uses the normal filters (your predicate, act exclusions, owned/mutually exclusive, config-disabled); unseen runes are preferred, the pick is seed-stable and identical on every client. Rerolling that slot draws from the act's normal pool.
+- `SetPlayerRuneCharacter(Type runeType, Type characterType)` (ApiVersion 2) marks a rune as belonging to a non-vanilla character so it gets the same 150% character weight that `characterPool` gives vanilla characters. Weight only; restrict who can get it with `isAvailableForPlayer`.
 - `isAvailableForPlayer` runs on every client and must be deterministic over synchronized state; a throwing predicate excludes the rune.
 - Hard-dependency helpers on `HextechRunesApi` also include `RegisterForgeShopPriceModifier(Func<RunState, int, int>)` (random-forge shop price modifiers, applied in registration order), `IsHextechRelic(RelicModel?)` (registry-based ownership check) and `StableIndex(RunState, int count, params string?[] salt)` (seed-stable index that never consumes shared RNG).
 - Selection presentation (hard dependency): `HextechRunesApi.RegisterSelectionPresenter(IHextechSelectionPresenter)` lets another mod draw the player-rune selection itself while Hextech Mayhem keeps the gameplay (pools, rerolls, enemy hexes, saves, multiplayer sync). The presenter gets a `HextechSelectionSession` with the options, enemy hexes (`HextechEnemyHexInfo`), reroll/choose/remove actions that go through the same logic as the built-in buttons, `EnemyHexesChangedRemotely` for the authority's synced adjustments, `HextechSelectionProgress` for who has already chosen, golden reroll state (`IsGoldenRerollActive`, `GoldenRerollRarity`, `GetOptionRarity`) and controller focus (`SetControllerFocus`). Experimental: signatures may still change.

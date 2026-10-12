@@ -11,6 +11,8 @@ internal static class HextechExternalContentRegistry
 	private static readonly Dictionary<ModelId, string> AssetModIdsByModelId = new();
 	private static readonly Dictionary<ModelId, string> EnchantmentIconPathsByModelId = new();
 	private static readonly Dictionary<ModelId, Func<Player, bool>> PlayerRuneAvailabilityByModelId = new();
+	// 符文 → 所属角色（CharacterModel 的 ModelId），给原版角色池以外的角色用；进角色加权计算，改动递增 _version。
+	private static readonly Dictionary<ModelId, ModelId> PlayerRuneCharacterIdsByModelId = new();
 	// 以下两项只影响界面文字，不进候选池计算，改动不递增 _version。
 	private static readonly Dictionary<ModelId, string> PlayerRunePoolLabelKeysByModelId = new();
 	private static readonly Dictionary<string, string> ConfigSectionTitleKeysByAssetModId = new(StringComparer.Ordinal);
@@ -201,6 +203,41 @@ internal static class HextechExternalContentRegistry
 				titleKey,
 				"external-content.config-section-conflict",
 				(existing, incoming) => DescribeStringConflict($"config section title for {assetModId}", existing, incoming));
+		}
+	}
+
+	internal static void SetPlayerRuneCharacter(Type runeType, Type characterType)
+	{
+		lock (SyncRoot)
+		{
+			if (TryStoreFirstWriter(
+				PlayerRuneCharacterIdsByModelId,
+				ModelDb.GetId(runeType),
+				ModelDb.GetId(characterType),
+				"external-content.rune-character-conflict",
+				(existing, incoming) => $"Conflicting duplicate character for {runeType.FullName}; first character retained: "
+					+ $"existing={existing.Entry} incoming={incoming.Entry} callerAssembly={DescribeCallerAssembly(runeType)}"))
+			{
+				_version++;
+			}
+		}
+	}
+
+	internal static ModelId? GetPlayerRuneCharacterId(ModelId runeId)
+	{
+		lock (SyncRoot)
+		{
+			return PlayerRuneCharacterIdsByModelId.TryGetValue(runeId, out ModelId? characterId)
+				? characterId
+				: null;
+		}
+	}
+
+	internal static bool HasPlayerRunesForCharacter(ModelId characterId)
+	{
+		lock (SyncRoot)
+		{
+			return PlayerRuneCharacterIdsByModelId.ContainsValue(characterId);
 		}
 	}
 

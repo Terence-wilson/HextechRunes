@@ -9,9 +9,10 @@ public static class HextechRunesInterop
 	private static readonly List<Func<IRunState, string?>> ExtraActProviders = [];
 
 	/// <summary>
-	/// 本类公开契约的版本。1 = RegisterPlayerRune、SetPlayerRunePoolLabel、RegisterConfigSectionTitle、RegisterExtraActProvider。
+	/// 本类公开契约的版本。1 = RegisterPlayerRune、SetPlayerRunePoolLabel、RegisterConfigSectionTitle、RegisterExtraActProvider；
+	/// 2 = RegisterPlayerRune 的 flags 新增 GuaranteedFirstPick，新增 SetPlayerRuneCharacter。
 	/// </summary>
-	public static int ApiVersion => 1;
+	public static int ApiVersion => 2;
 
 	/// <summary>
 	/// 注册外部玩家符文，符文类型只需继承 RelicModel，且 Rarity 必须是 RelicRarity.Starter。
@@ -19,7 +20,7 @@ public static class HextechRunesInterop
 	/// </summary>
 	/// <param name="runeType">具体、封闭的 RelicModel 子类。</param>
 	/// <param name="rarity">海克斯品级名：Silver / Gold / Prismatic（不区分大小写）。</param>
-	/// <param name="flags">PlayerRuneFlags 名称，逗号分隔；null 或空串为 None。</param>
+	/// <param name="flags">PlayerRuneFlags 名称，逗号分隔；null 或空串为 None。GuaranteedFirstPick 需要 ApiVersion ≥ 2。</param>
 	/// <param name="characterPool">角色池名：Ironclad / Silent / Regent / Defect / Necrobinder；null 为通用。</param>
 	/// <param name="characterOrder">角色池内排序。</param>
 	/// <param name="tagKey">海克斯标签键；null 或空白为 COMPREHENSIVE。</param>
@@ -64,6 +65,19 @@ public static class HextechRunesInterop
 	{
 		HextechRunesApi.ValidateConcreteModelType(runeType, typeof(RelicModel), nameof(runeType), "Player rune");
 		HextechExternalContentRegistry.SetPlayerRunePoolLabel(runeType, RequireKey(poolKey, nameof(poolKey)));
+	}
+
+	/// <summary>
+	/// 指定符文所属的角色，给原版五个角色池以外的角色（例如模组角色）用：当前角色就是 characterType 时，
+	/// 该符文在三选一里享受角色专属加权，与 characterPool 对原版角色的效果相同。只影响权重，不限制谁能拿到，
+	/// 限制发放请用 RegisterPlayerRune 的 isAvailableForPlayer。以第一次登记为准。需要 ApiVersion ≥ 2。
+	/// </summary>
+	/// <exception cref="ArgumentException">runeType 不是具体的 RelicModel，或 characterType 不是具体的 CharacterModel。</exception>
+	public static void SetPlayerRuneCharacter(Type runeType, Type characterType)
+	{
+		HextechRunesApi.ValidateConcreteModelType(runeType, typeof(RelicModel), nameof(runeType), "Player rune");
+		HextechRunesApi.ValidateConcreteModelType(characterType, typeof(CharacterModel), nameof(characterType), "Character");
+		HextechExternalContentRegistry.SetPlayerRuneCharacter(runeType, characterType);
 	}
 
 	/// <summary>
