@@ -60,6 +60,7 @@ public sealed class CollectorRune : HextechRelicBase
 		_executing = true;
 		try
 		{
+			HextechCombatVfx.CollectorExecute(target);
 			await CreatureCmd.Kill(target);
 			await RecordExecution(target, creditable);
 		}
@@ -101,6 +102,7 @@ public sealed class CollectorRune : HextechRelicBase
 
 		await PlayerCmd.GainGold(DynamicVars[CountPerExecuteVar].IntValue, Owner);
 		Flash();
+		HextechCombatVfx.CollectorCoins(target);
 	}
 
 	internal static bool IsBelowExecuteThreshold(decimal currentHp, decimal maxHp, decimal executePercent)

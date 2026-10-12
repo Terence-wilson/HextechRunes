@@ -64,6 +64,7 @@ public sealed class JeweledGauntletRune : HextechRelicBase
 			if (shouldReplay)
 			{
 				Flash();
+				HextechCombatVfx.JeweledGauntletSparkle(cardPlay.Card);
 			}
 		}
 

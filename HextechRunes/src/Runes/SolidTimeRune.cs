@@ -63,6 +63,7 @@ public sealed partial class SolidTimeRune : HextechRelicBase
 		}
 
 		Flash();
+		await HextechCombatVfx.SolidTimeResume(Owner.Creature, CreateDisplayCards(cards));
 		for (int i = 0; i < cards.Count; i++)
 		{
 			if (CombatManager.Instance.IsOverOrEnding || Owner.Creature.IsDead)

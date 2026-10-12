@@ -372,6 +372,7 @@ internal static class HextechFormAutoPlayHooks
 				&& batch.TryGetHorizontalOffset(node.Model, out float offset))
 			{
 				__result.X += offset;
+				HextechCombatVfxHooks.RegisterPowerFlyFanOffset(node, offset);
 			}
 		}
 	}

@@ -63,6 +63,20 @@ public sealed partial class SolidTimeRune
 		return preview;
 	}
 
+	// 开战特效用的展示牌：与悬停提示同样只 ToMutable，不进战斗状态；归属设为持有者，飞入动画按归属找角色节点。
+	private List<CardModel> CreateDisplayCards(IReadOnlyList<StoredCard> cards)
+	{
+		List<CardModel> displayCards = new(cards.Count);
+		foreach (StoredCard stored in cards)
+		{
+			CardModel preview = CreatePreviewCard(stored);
+			preview.Owner = Owner;
+			displayCards.Add(preview);
+		}
+
+		return displayCards;
+	}
+
 	private CardModel CreateCombatCard(HextechCombatState combatState, StoredCard stored)
 	{
 		CardModel card = combatState.CreateCard(TryGetCanonical(stored)!, Owner);

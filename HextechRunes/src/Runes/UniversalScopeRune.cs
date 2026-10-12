@@ -57,6 +57,8 @@ public abstract class UniversalScopeRuneBase : HextechRelicBase
 			scope.Flash();
 		}
 
+		HextechCombatVfx.ScopeLockOn(cardPlay.Card);
+
 		if (cardPlay.Card.Pile?.Type == PileType.Play)
 		{
 			// 多级“升级：打击/防御”牌在移出 Play 堆时会经过完整的 AfterCardChangedPiles
