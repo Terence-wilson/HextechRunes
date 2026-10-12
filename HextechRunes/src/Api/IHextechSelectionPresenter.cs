@@ -9,7 +9,9 @@ namespace HextechRunes;
 public interface IHextechSelectionPresenter
 {
 	/// <summary>
-	/// 为 true 时，本幕开始选择不关闭地图（表现层自己处理地图），选择界面隐藏后也不进入只读地图预览。
+	/// 为 true 时，本幕开始选择前不关闭地图（表现层自己处理地图），接管的界面隐藏后也不进入只读地图预览。
+	/// 只对表现层实际接管的界面生效：拒绝接管的界面以及“仅继续”、自选、锻造器等本体界面，显示前仍会关闭地图，
+	/// 选择结束后照常重新打开。
 	/// </summary>
 	bool KeepsMapOpen { get; }
 

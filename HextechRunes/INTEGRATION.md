@@ -284,7 +284,7 @@ HextechRunesApi.RegisterSelectionPresenter(new MyPresenter());
 
 sealed class MyPresenter : IHextechSelectionPresenter
 {
-	public bool KeepsMapOpen => false;                                  // true：开选前不关地图，隐藏后也不进只读地图预览
+	public bool KeepsMapOpen => false;                                  // true：开选前不关地图；只对接管的界面生效，本体界面显示前仍会关地图
 	public bool ShouldPresent(HextechSelectionSession session) => true; // 返回 false 时这一次仍用本体界面
 	public void Present(HextechSelectionSession session) { /* 搭建自己的界面 */ }
 }

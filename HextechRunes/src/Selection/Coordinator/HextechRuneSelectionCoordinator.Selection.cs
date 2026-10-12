@@ -218,6 +218,8 @@ internal static partial class HextechRuneSelectionCoordinator
 			goldenRerollSession,
 			selfPickPool,
 			continueOnly);
+		await CloseMapBeforeOwnScreenAsync(selectionScreen);
+
 		if (NOverlayStack.Instance == null)
 		{
 			throw new InvalidOperationException("NOverlayStack is not available for hextech selection.");

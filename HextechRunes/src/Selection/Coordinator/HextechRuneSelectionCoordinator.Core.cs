@@ -23,6 +23,7 @@ internal static partial class HextechRuneSelectionCoordinator
 	public static void ResetActSelectionState()
 	{
 		_actSelectionRun = null;
+		HextechSelectionProgress.Reset([]);
 	}
 
 	private static bool ResetActSelectionIfStale(RunState runState)
@@ -70,6 +71,8 @@ internal static partial class HextechRuneSelectionCoordinator
 
 		_actSelectionRun = runState;
 		bool reopenMapAfterSelection = false;
+		// 表现层要求保持地图打开时，本体界面会在显示前自行关闭地图（见 CloseMapBeforeOwnScreen），结束时同样要重新打开。
+		bool mapOpenBeforeSelection = NMapScreen.Instance?.IsOpen == true;
 		try
 		{
 			if (!await WaitForSelectionBlockingOverlaysToClear(runState, actIndex, "before-map-close"))
@@ -146,7 +149,7 @@ internal static partial class HextechRuneSelectionCoordinator
 			// 地图 UI 是表现层,它抛错不能阻断闸门释放;否则本局后续所有进入都会被 IsHandling 挡住。
 			try
 			{
-				if (reopenMapAfterSelection
+				if ((reopenMapAfterSelection || (mapOpenBeforeSelection && HextechSelectionPresentation.KeepsMapOpen))
 					&& IsCurrentRunInProgress(runState)
 					&& NMapScreen.Instance != null
 					&& !NMapScreen.Instance.IsOpen)
@@ -372,6 +375,23 @@ internal static partial class HextechRuneSelectionCoordinator
 		HextechLog.Info("Mayhem", $"HandleHextechActSelection: closing map before showing selection overlay");
 		NMapScreen.Instance.Close(animateOut: false);
 		return true;
+	}
+
+	// 表现层保持地图打开，但这块界面由本体自己显示（表现层拒绝接管，或是“仅继续”、自选、锻造器等界面）：
+	// 显示前关闭地图，否则界面会落进只读地图预览。重新打开由 HandleHextechActSelection 的 finally 负责。
+	private static async Task CloseMapBeforeOwnScreenAsync(HextechRuneSelectionScreen screen)
+	{
+		if (screen.IsExternallyPresented
+			|| !HextechSelectionPresentation.KeepsMapOpen
+			|| NMapScreen.Instance?.IsOpen != true
+			|| NGame.Instance is not NGame game)
+		{
+			return;
+		}
+
+		HextechLog.Info("Mayhem", "SelectionScreen: closing map before showing a screen the presenter did not take over");
+		NMapScreen.Instance.Close(animateOut: false);
+		await game.ToSignal(game.GetTree(), SceneTree.SignalName.ProcessFrame);
 	}
 
 	/// <summary>本幕结算完成:写入敌方海克斯、标记已结算、应用地图修正、刷新敌方 UI 并作用到当前敌人,最后存档。</summary>

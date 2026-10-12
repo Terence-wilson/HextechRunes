@@ -50,6 +50,7 @@ HextechRunes.HextechRuneSelectionCoordinator._actSelectionRun : RunState
 HextechRunes.HextechRuneSelectionScreen.RerollSfxPlayer : AudioStreamPlayer
 HextechRunes.HextechRuneSelectionScreen.SelectSfxPlayer : AudioStreamPlayer
 HextechRunes.HextechSavedPropertyBootstrap._officialCacheAudited : Boolean
+HextechRunes.HextechSelectionProgress.Changed : Action
 HextechRunes.HextechTextures._missingTexture : Texture2D
 HextechRunes.HextechUiPreferences._config : ModUiConfig
 HextechRunes.HextechUpdateChecker._cachedResult : UpdateCheckResult
