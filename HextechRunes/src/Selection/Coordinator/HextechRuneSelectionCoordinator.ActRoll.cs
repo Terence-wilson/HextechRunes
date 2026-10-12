@@ -98,40 +98,24 @@ internal static partial class HextechRuneSelectionCoordinator
 	/// </summary>
 	private static LocalActRoll RollLocalActRoll(RunState runState, HextechMayhemModifier modifier, int actIndex, bool isMultiplayer)
 	{
-		bool isPresetChallenge = HextechPresetChallengeRegistry.IsActive(runState);
-		HextechPresetChallengeActPlan? challengeAct = HextechPresetChallengeRegistry.TryGetActPlan(runState, actIndex, out HextechPresetChallengeActPlan? resolvedChallengeAct)
-			? resolvedChallengeAct
-			: null;
-		HextechRunConfigurationSnapshot localRunConfigSnapshot = isPresetChallenge
-			? HextechRuneConfiguration.GetDefaultSnapshot()
-			: modifier.GetEffectiveRunConfigurationSnapshot();
-		if (isPresetChallenge)
-		{
-			modifier.SetRunConfigurationSnapshot(localRunConfigSnapshot, $"preset challenge act-roll act={actIndex}");
-		}
-
-		IReadOnlySet<string> localDisabledPlayerRuneIds = isPresetChallenge
-			? localRunConfigSnapshot.DisabledPlayerRuneIds
-			: HextechRuneConfiguration.GetDisabledPlayerRuneIds();
+		HextechRunConfigurationSnapshot localRunConfigSnapshot = modifier.GetEffectiveRunConfigurationSnapshot();
+		IReadOnlySet<string> localDisabledPlayerRuneIds = HextechRuneConfiguration.GetDisabledPlayerRuneIds();
 
 		HextechRarityTier? savedRarity = modifier.GetRarityForAct(actIndex);
 		HextechRarityTier? forcedRarity = HextechCustomRunModifierCompatibility.GetForcedRarity(runState);
-		IReadOnlyList<HextechRarityTier> enabledRarities = isPresetChallenge
-			? HextechRunePoolBuilder.GetEnabledPlayerRuneRaritiesForDisabledIds(localDisabledPlayerRuneIds)
-			: HextechRunePoolBuilder.GetEnabledPlayerRuneRarities(runState);
+		IReadOnlyList<HextechRarityTier> enabledRarities = HextechRunePoolBuilder.GetEnabledPlayerRuneRarities(runState);
 		HextechRarityTier? effectiveForcedRarity = forcedRarity.HasValue && enabledRarities.Contains(forcedRarity.Value)
 			? forcedRarity
 			: null;
 		// 禁用局仍交换房主配置，但不为不会发放的内容抽取 RNG。占位稀有度只用于
 		// 既有 act-roll 协议；Core 在同步后按房主冻结值跳过所有内容生成。
 		HextechRarityTier localRarity = !modifier.IsModActiveForRun ? HextechRarityTier.Silver : savedRarity
-			?? challengeAct?.PlayerRarity
 			?? effectiveForcedRarity
 			?? RollActRarity(modifier, actIndex, runState, enabledRarities, deterministic: isMultiplayer);
-		LogLocalActRollRarity(actIndex, localRarity, savedRarity, challengeAct, forcedRarity, effectiveForcedRarity, enabledRarities);
+		LogLocalActRollRarity(actIndex, localRarity, savedRarity, forcedRarity, effectiveForcedRarity, enabledRarities);
 
 		IReadOnlyList<MonsterHexKind> previousHexes = modifier.GetActiveMonsterHexesBeforeAct(actIndex);
-		int newEnemyHexCount = challengeAct?.EnemyHexes.Count ?? modifier.GetEnemyHexCountForAct(actIndex);
+		int newEnemyHexCount = modifier.GetEnemyHexCountForAct(actIndex);
 		MonsterHexKind? savedPrimaryMonsterHex = modifier.GetMonsterHexesForAct(actIndex)
 			.Where(hex => !previousHexes.Contains(hex))
 			.Cast<MonsterHexKind?>()
@@ -139,7 +123,6 @@ internal static partial class HextechRuneSelectionCoordinator
 		MonsterHexKind? localMonsterHex = !modifier.IsModActiveForRun || newEnemyHexCount <= 0
 			? null
 			: savedPrimaryMonsterHex
-				?? challengeAct?.EnemyHexes.FirstOrDefault()
 				?? ChooseMonsterHexForAct(modifier, localRarity, runState, actIndex, previousHexes, deterministic: isMultiplayer);
 		HextechLog.Info("Mayhem", $"ResolveActRoll enemy count: act={actIndex} newCount={newEnemyHexCount} previous={previousHexes.Count} primary={localMonsterHex}");
 		return new LocalActRoll(localRarity, localMonsterHex, localRunConfigSnapshot, localDisabledPlayerRuneIds);
@@ -149,7 +132,6 @@ internal static partial class HextechRuneSelectionCoordinator
 		int actIndex,
 		HextechRarityTier localRarity,
 		HextechRarityTier? savedRarity,
-		HextechPresetChallengeActPlan? challengeAct,
 		HextechRarityTier? forcedRarity,
 		HextechRarityTier? effectiveForcedRarity,
 		IReadOnlyList<HextechRarityTier> enabledRarities)
@@ -159,11 +141,7 @@ internal static partial class HextechRuneSelectionCoordinator
 			return;
 		}
 
-		if (challengeAct != null)
-		{
-			HextechLog.Info("Challenge", $"ResolveActRoll preset: act={actIndex} rarity={localRarity} enemyHexes={string.Join(",", challengeAct.EnemyHexes)}");
-		}
-		else if (effectiveForcedRarity.HasValue)
+		if (effectiveForcedRarity.HasValue)
 		{
 			HextechLog.Info("Mayhem", $"ResolveActRoll forced rarity: act={actIndex} rarity={localRarity}");
 		}
@@ -385,19 +363,6 @@ internal static partial class HextechRuneSelectionCoordinator
 				"Mayhem", $"ResolveNewMonsterHexesForAct: " +
 				$"restored checkpoint act={actIndex} newHexes={string.Join(",", checkpointedNewHexes)}");
 			return checkpointedNewHexes;
-		}
-
-		if (HextechPresetChallengeRegistry.TryGetActPlan(runState, actIndex, out HextechPresetChallengeActPlan? challengeAct))
-		{
-			if (challengeAct.EnemyHexes.Count != newEnemyHexCount)
-			{
-				throw new InvalidOperationException(
-					$"Preset challenge enemy count mismatch for act={actIndex}: " +
-					$"configured={newEnemyHexCount} planned={challengeAct.EnemyHexes.Count}.");
-			}
-
-			HextechLog.Info("Challenge", $"ResolveNewMonsterHexesForAct preset: act={actIndex} newHexes={string.Join(",", challengeAct.EnemyHexes)}");
-			return challengeAct.EnemyHexes;
 		}
 
 		bool isMultiplayer = !HextechPlayerContextHelper.IsSinglePlayerFlow(RunManager.Instance.NetService.Type);

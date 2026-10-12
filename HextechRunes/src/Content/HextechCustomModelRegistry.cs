@@ -20,6 +20,7 @@ internal static class HextechCustomModelRegistry
 		typeof(HextechPrismaticRunModifier)
 	];
 
+	// 已退役的预设挑战同样只保留模型注册（见 HextechPresetChallenges.cs）。
 	internal static IReadOnlyList<Type> CustomChallengeModifierTypes { get; } =
 	[
 		typeof(StuffedToRuinChallengeModifier),
