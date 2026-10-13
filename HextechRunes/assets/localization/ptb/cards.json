@@ -15,7 +15,7 @@
   "INFERNAL_DRAGON_SOUL_CARD.description": "O primeiro Ataque que você joga a cada turno aplica [blue]{BurnPower}[/blue] [gold]Queimadura[/gold] aos inimigos.",
   "INFERNAL_DRAGON_SOUL_CARD.flavor": "O primeiro golpe acende a luta inteira.",
   "HEXTECH_DRAGON_SOUL_CARD.title": "Alma do Dragão Hextech",
-  "HEXTECH_DRAGON_SOUL_CARD.description": "Ganha [blue]{Energy}[/blue] de Energia extra a cada turno.",
+  "HEXTECH_DRAGON_SOUL_CARD.description": "Ganha {Energy:energyIcons()} adicional a cada turno.",
   "HEXTECH_DRAGON_SOUL_CARD.flavor": "O raio na bobina nunca dorme.",
   "MOUNTAIN_DRAGON_SOUL_CARD.title": "Alma do Dragão da Montanha",
   "MOUNTAIN_DRAGON_SOUL_CARD.description": "No início do seu turno, ganha [blue]{PlatingPower}[/blue] [gold]Blindagem[/gold].",

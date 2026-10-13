@@ -9,6 +9,7 @@ internal static class MonsterHexCatalog
 		new Dictionary<MonsterHexKind, Type[]>
 		{
 			[MonsterHexKind.Slap] = [typeof(StrengthPower)],
+			[MonsterHexKind.SpinToWin] = [typeof(DrawCardsNextTurnPower), typeof(EnergyNextTurnPower)],
 			[MonsterHexKind.Tormentor] = [typeof(HextechBurnPower)],
 			[MonsterHexKind.Firebrand] = [typeof(HextechBurnPower)],
 			[MonsterHexKind.Corrosion] = [typeof(FrailPower)],

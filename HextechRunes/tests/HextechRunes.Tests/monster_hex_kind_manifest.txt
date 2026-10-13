@@ -150,3 +150,4 @@ CorruptHeart=146
 BadTaste=147
 TransmuteSilver=148
 TransmuteGold=149
+SpinToWin=150

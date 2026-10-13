@@ -156,5 +156,6 @@ internal enum MonsterHexKind
 	CorruptHeart = 146,       // 升级：腐化之心（棱彩）
 	BadTaste = 147,           // 恶趣味（白银）
 	TransmuteSilver = 148,    // 质变：白银阶（黄金）
-	TransmuteGold = 149       // 质变：黄金阶（棱彩）
+	TransmuteGold = 149,      // 质变：黄金阶（棱彩）
+	SpinToWin = 150           // 转出胜利（棱彩，SpinToWinHex）；我方同名符文是黄金 SpinToWinRune
 }

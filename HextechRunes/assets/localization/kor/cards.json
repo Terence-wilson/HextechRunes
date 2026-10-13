@@ -15,7 +15,7 @@
   "INFERNAL_DRAGON_SOUL_CARD.description": "매 턴 처음으로 플레이하는 공격 카드가 적에게 [gold]점화[/gold]를 [blue]{BurnPower}[/blue] 부여합니다.",
   "INFERNAL_DRAGON_SOUL_CARD.flavor": "첫 번째 일격이 전체 전투에 불을 붙입니다.",
   "HEXTECH_DRAGON_SOUL_CARD.title": "마법공학 드래곤의 영혼",
-  "HEXTECH_DRAGON_SOUL_CARD.description": "매 턴 [blue]{Energy}[/blue]의 추가 에너지를 얻습니다.",
+  "HEXTECH_DRAGON_SOUL_CARD.description": "매 턴 {Energy:energyIcons()}을(를) 추가로 얻습니다.",
   "HEXTECH_DRAGON_SOUL_CARD.flavor": "코일 속의 번개는 결코 잠들지 않습니다.",
   "MOUNTAIN_DRAGON_SOUL_CARD.title": "대지 드래곤의 영혼",
   "MOUNTAIN_DRAGON_SOUL_CARD.description": "턴 시작 시 [gold]판금[/gold]을 [blue]{PlatingPower}[/blue] 얻습니다.",

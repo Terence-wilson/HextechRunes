@@ -15,7 +15,7 @@
   "INFERNAL_DRAGON_SOUL_CARD.description": "The first Attack you play each turn applies [blue]{BurnPower}[/blue] [gold]Burn[/gold] to enemies.",
   "INFERNAL_DRAGON_SOUL_CARD.flavor": "The first strike lights the whole fight.",
   "HEXTECH_DRAGON_SOUL_CARD.title": "Hextech Dragon Soul",
-  "HEXTECH_DRAGON_SOUL_CARD.description": "Gain [blue]{Energy}[/blue] extra Energy each turn.",
+  "HEXTECH_DRAGON_SOUL_CARD.description": "Gain an extra {Energy:energyIcons()} each turn.",
   "HEXTECH_DRAGON_SOUL_CARD.flavor": "Lightning in the coil never sleeps.",
   "MOUNTAIN_DRAGON_SOUL_CARD.title": "Mountain Dragon Soul",
   "MOUNTAIN_DRAGON_SOUL_CARD.description": "At the start of your turn, gain [blue]{PlatingPower}[/blue] [gold]Plating[/gold].",

@@ -1548,5 +1548,15 @@
   "TRANSMUTE_GOLD_HEX.description": "Enemies gain [blue]2[/blue] random Gold Hextech runes.",
   "TRANSMUTE_GOLD_HEX.flavor": "Break a prism in half, and both halves are still gold.",
   "transmuteGoldHex.enemyDescription": "Enemies gain [blue]2[/blue] random Gold Hextech runes.",
+  "BLOODTHIRST_RUNE.title": "Bloodthirst",
+  "BLOODTHIRST_RUNE.description": "Whenever you deal unblocked damage, heal for [blue]{HealPercent}%[/blue] of that damage.",
+  "BLOODTHIRST_RUNE.flavor": "One taste is never enough.",
+  "PURIST_RUNE.title": "Purist",
+  "PURIST_RUNE.description": "During your turn, whenever you would draw cards, gain that much Energy instead.",
+  "PURIST_RUNE.flavor": "Fewer cards, clearer path.",
+  "SPIN_TO_WIN_HEX.title": "Spin to Win",
+  "SPIN_TO_WIN_HEX.description": "Card draw and Energy that players gain during their turn take effect next turn instead.",
+  "SPIN_TO_WIN_HEX.flavor": "The faster it spins, the further victory drifts.",
+  "spinToWinHex.enemyDescription": "Card draw and Energy that players gain during their turn take effect next turn instead.",
   "badTasteRune.enemyDescription": "Whenever an enemy receives a debuff, it heals [blue]1%[/blue] of its Max HP."
 }

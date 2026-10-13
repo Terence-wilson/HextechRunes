@@ -1548,5 +1548,15 @@
   "TRANSMUTE_GOLD_HEX.description": "적이 무작위 골드 마법공학 룬을 [blue]2[/blue]개 얻습니다.",
   "TRANSMUTE_GOLD_HEX.flavor": "프리즘을 반으로 쪼개도, 두 조각 모두 여전히 금빛입니다.",
   "transmuteGoldHex.enemyDescription": "적이 무작위 골드 마법공학 룬을 [blue]2[/blue]개 얻습니다.",
+  "BLOODTHIRST_RUNE.title": "피의 갈망",
+  "BLOODTHIRST_RUNE.description": "막히지 않은 피해를 줄 때, 그 피해의 [blue]{HealPercent}%[/blue]만큼 체력을 회복합니다.",
+  "BLOODTHIRST_RUNE.flavor": "한 번 맛보면 멈출 수 없습니다.",
+  "PURIST_RUNE.title": "순수주의자",
+  "PURIST_RUNE.description": "자신의 턴 중 카드를 뽑을 때, 대신 같은 수만큼 에너지를 얻습니다.",
+  "PURIST_RUNE.flavor": "손패가 적을수록 길은 곧아집니다.",
+  "SPIN_TO_WIN_HEX.title": "돌려서 승리",
+  "SPIN_TO_WIN_HEX.description": "플레이어가 자신의 턴 중 얻은 카드 뽑기와 에너지는 다음 턴에 발동합니다.",
+  "SPIN_TO_WIN_HEX.flavor": "빨리 돌수록 승리는 멀어집니다.",
+  "spinToWinHex.enemyDescription": "플레이어가 자신의 턴 중 얻은 카드 뽑기와 에너지는 다음 턴에 발동합니다.",
   "badTasteRune.enemyDescription": "적이 디버프를 받을 때마다 최대 체력의 [blue]1%[/blue]를 회복합니다."
 }

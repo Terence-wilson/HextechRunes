@@ -32,6 +32,8 @@
     "RED_ENVELOPE_RUNE": "红包",
     "ESCAPE_PLAN_RUNE": "逃跑计划",
     "BAD_TASTE_RUNE": "恶趣味",
+    "BLOODTHIRST_RUNE": "渴血",
+    "PURIST_RUNE": "纯粹主义者",
     "COURAGE_OF_COLOSSUS_RUNE": "巨像的勇气",
     "ENDLESS_RECOVERY_RUNE": "无休回复",
     "GLASS_CANNON_RUNE": "玻璃大炮",
@@ -660,7 +662,8 @@
     "CorruptHeart": "升级：腐化之心",
     "BadTaste": "恶趣味",
     "TransmuteSilver": "质变：白银阶",
-    "TransmuteGold": "质变：黄金阶"
+    "TransmuteGold": "质变：黄金阶",
+    "SpinToWin": "转出胜利"
   },
   "characters": {
     "IRONCLAD": "战士",

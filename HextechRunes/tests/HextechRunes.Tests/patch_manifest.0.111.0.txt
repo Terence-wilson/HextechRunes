@@ -22,6 +22,7 @@ combat.damage-command | MegaCrit.Sts2.Core.Commands.CreatureCmd.Damage(PlayerCho
 combat.damage-command-state-notify | MegaCrit.Sts2.Core.Combat.CombatStateTracker.NotifyCombatStateChanged(*) | finalizer(400) postfix(400) prefix(400)
 combat.die-for-you.target | MegaCrit.Sts2.Core.Models.Powers.DieForYouPower.ModifyUnblockedDamageTarget(Creature,Decimal,ValueProp,Creature) | postfix(400)
 combat.draw | MegaCrit.Sts2.Core.Commands.CardPileCmd.Draw(PlayerChoiceContext,Decimal,Player,Boolean) | prefix?(200)
+combat.draw-request | MegaCrit.Sts2.Core.Commands.CardPileCmd.Draw(PlayerChoiceContext,Decimal,Player,Boolean) | finalizer(400) prefix(800)
 combat.dual-wield.attack | MegaCrit.Sts2.Core.Commands.Builders.AttackCommand.Execute(PlayerChoiceContext) | prefix(400)
 combat.dual-wield.hover-tip | MegaCrit.Sts2.Core.MonsterMoves.Intents.AbstractIntent.GetHoverTip(IEnumerable`1,Creature) | postfix(400)
 combat.dual-wield.intent | MegaCrit.Sts2.Core.Nodes.Combat.NIntent.UpdateIntent(AbstractIntent,IEnumerable`1,Creature) | prefix(400)

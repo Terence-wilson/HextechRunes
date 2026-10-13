@@ -55,8 +55,21 @@ internal abstract class HextechEnemyHexEffect
 	}
 
 	// 只在 Mayhem 拦下一次真实抽牌之后调用（见 HextechMayhemModifier.AfterPreventingDraw）；ShouldDraw 本身只读。
-	internal virtual void AfterPreventingDraw(HextechEnemyHexContext context, Player player, bool fromHandDraw)
+	// 返回 true 表示这次被拦下的抽牌由本效果认领，排在后面的效果不再处理；requestedCount 是本次请求的张数。
+	internal virtual Task<bool> AfterPreventingDraw(HextechEnemyHexContext context, Player player, bool fromHandDraw, int requestedCount)
 	{
+		return Task.FromResult(false);
+	}
+
+	internal virtual decimal ModifyEnergyGain(HextechEnemyHexContext context, Player player, decimal amount)
+	{
+		return amount;
+	}
+
+	// 紧跟在改动过能量获得量的 ModifyEnergyGain 之后调用（原版 PlayerCmd.GainEnergy）。
+	internal virtual Task AfterModifyingEnergyGain(HextechEnemyHexContext context)
+	{
+		return Task.CompletedTask;
 	}
 
 	internal virtual bool ShouldPlay(HextechEnemyHexContext context, CardModel card, AutoPlayType autoPlayType)

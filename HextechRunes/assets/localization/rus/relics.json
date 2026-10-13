@@ -1548,5 +1548,15 @@
   "TRANSMUTE_GOLD_HEX.description": "Враги получают [blue]2[/blue] случайные золотые руны Хекстека.",
   "TRANSMUTE_GOLD_HEX.flavor": "Расколи призму пополам — обе половины останутся золотыми.",
   "transmuteGoldHex.enemyDescription": "Враги получают [blue]2[/blue] случайные золотые руны Хекстека.",
+  "BLOODTHIRST_RUNE.title": "Жажда крови",
+  "BLOODTHIRST_RUNE.description": "Когда вы наносите незаблокированный урон, вы исцеляетесь на [blue]{HealPercent}%[/blue] от этого урона.",
+  "BLOODTHIRST_RUNE.flavor": "Одного глотка всегда мало.",
+  "PURIST_RUNE.title": "Пурист",
+  "PURIST_RUNE.description": "Во время своего хода вместо добора карт вы получаете столько же Энергии.",
+  "PURIST_RUNE.flavor": "Меньше карт — прямее путь.",
+  "SPIN_TO_WIN_HEX.title": "Победный оборот",
+  "SPIN_TO_WIN_HEX.description": "Добор карт и Энергия, которые игроки получают во время своего хода, срабатывают на следующем ходу.",
+  "SPIN_TO_WIN_HEX.flavor": "Чем быстрее вращение, тем дальше победа.",
+  "spinToWinHex.enemyDescription": "Добор карт и Энергия, которые игроки получают во время своего хода, срабатывают на следующем ходу.",
   "badTasteRune.enemyDescription": "Когда враг получает отрицательный эффект, он восстанавливает [blue]1%[/blue] от макс. ОЗ."
 }

@@ -26,7 +26,19 @@ internal static class HextechSelectedDrawHelper
 			return Array.Empty<CardModel>();
 		}
 
-		if (!Hook.ShouldDraw(combatState, player, fromHandDraw, out AbstractModel? modifier))
+		bool shouldDraw;
+		AbstractModel? modifier;
+		HextechDrawRequest.Begin(player, requestedDraws);
+		try
+		{
+			shouldDraw = Hook.ShouldDraw(combatState, player, fromHandDraw, out modifier);
+		}
+		finally
+		{
+			HextechDrawRequest.End();
+		}
+
+		if (!shouldDraw)
 		{
 			if (modifier != null)
 			{
