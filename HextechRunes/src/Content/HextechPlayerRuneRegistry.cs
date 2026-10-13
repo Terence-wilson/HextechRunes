@@ -234,7 +234,7 @@ internal static class HextechPlayerRuneRegistry
 		Rune<CrashLandingUpgradeRune>(HextechRarityTier.Gold, characterPool: PlayerRuneCharacterPool.Regent, characterOrder: 23, tagKey: "OUTPUT"),
 		Rune<ChargeUpRune>(HextechRarityTier.Gold, characterPool: PlayerRuneCharacterPool.Regent, characterOrder: 26, tagKey: "RESOURCE"),
 		Rune<AutoPatrolRune>(HextechRarityTier.Gold, flags: PlayerRuneFlags.Disabled, characterPool: PlayerRuneCharacterPool.Necrobinder, characterOrder: 31, tagKey: "SUMMON"),
-		Rune<DeathHarvestRune>(HextechRarityTier.Gold, flags: PlayerRuneFlags.Disabled, tagKey: "SURVIVAL"),
+		Rune<DeathHarvestRune>(HextechRarityTier.Gold, tagKey: "SURVIVAL"),
 		Rune<TwilightVeilRune>(HextechRarityTier.Gold, flags: PlayerRuneFlags.Disabled),
 		Rune<LingeringMightRune>(HextechRarityTier.Gold),
 		Rune<HundredRefinementsRune>(HextechRarityTier.Gold, tagKey: "RANDOM"),

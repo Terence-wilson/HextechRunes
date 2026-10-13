@@ -48,7 +48,9 @@ internal static partial class HextechRuneConfiguration
 		// 大地苏醒重做为"每抽 8 张牌新增一块 5 层滚石"，转为默认启用。
 		new(41, [ typeof(EarthAwakensRune) ], []),
 		// 启动流程敌我双方转为默认禁用。
-		new(42, [], [ typeof(StartupRoutineRune) ])
+		new(42, [], [ typeof(StartupRoutineRune) ]),
+		// 我方吸血习性（原死亡收割，v23 默认禁用）转为默认启用。
+		new(43, [ typeof(DeathHarvestRune) ], [])
 	];
 
 	/// <summary>敌方海克斯默认禁用迁移:只迁移一次,之后尊重玩家手动开启。</summary>
