@@ -45,7 +45,7 @@ internal static class HextechPlayerRuneRegistry
 		Rune<ZealotRune>(HextechRarityTier.Silver, tagKey: "RESOURCE"),
 		Rune<MindToMatterRune>(HextechRarityTier.Silver, tagKey: "SURVIVAL"),
 		Rune<StatsRune>(HextechRarityTier.Silver, tagKey: "RANDOM"),
-		Rune<StartupRoutineRune>(HextechRarityTier.Silver, tagKey: "SURVIVAL"),
+		Rune<StartupRoutineRune>(HextechRarityTier.Silver, flags: PlayerRuneFlags.Disabled, tagKey: "SURVIVAL"),
 		Rune<CollectorRune>(HextechRarityTier.Silver, tagKey: "ECONOMY"),
 		Rune<BloodPactRune>(HextechRarityTier.Silver, characterPool: PlayerRuneCharacterPool.Ironclad, characterOrder: 2, tagKey: "BLOODLETTING"),
 		Rune<PlateletRune>(HextechRarityTier.Silver, characterPool: PlayerRuneCharacterPool.Ironclad, characterOrder: 3, tagKey: "BLOODLETTING"),

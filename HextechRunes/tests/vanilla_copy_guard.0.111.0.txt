@@ -5,7 +5,6 @@ MegaCrit.Sts2.Core.Commands.CreatureCmd::GainBlock(MegaCrit.Sts2.Core.Entities.C
 MegaCrit.Sts2.Core.Commands.CreatureCmd::GainMaxHp(MegaCrit.Sts2.Core.Entities.Creatures.Creature,System.Decimal)=c79674e703b33ffd3a0931edf7b051a908393386
 MegaCrit.Sts2.Core.Commands.CreatureCmd::Heal(MegaCrit.Sts2.Core.Entities.Creatures.Creature,System.Decimal,System.Boolean)=e7275e6939cf0a516e58966a528dfc37dd49e7ca
 MegaCrit.Sts2.Core.Commands.CreatureCmd::LoseMaxHp(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Creatures.Creature,System.Decimal,System.Boolean)=f4493c90c4601fddf6e841a0edaaa47d29b9f68a
-MegaCrit.Sts2.Core.Commands.CreatureCmd::SetMaxHp(MegaCrit.Sts2.Core.Entities.Creatures.Creature,System.Decimal)=07e973d09be2f82cc565ead7b49578a8f3766d9d
 MegaCrit.Sts2.Core.Commands.OrbCmd::AddSlots(MegaCrit.Sts2.Core.Entities.Players.Player,System.Int32)=ac393c26cef573dbaf7d3dd758b9a0ceec1a002c
 MegaCrit.Sts2.Core.Commands.PlayerCmd::EndTurn(MegaCrit.Sts2.Core.Entities.Players.Player,System.Boolean,System.Func`1[[System.Threading.Tasks.Task, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]])=f9d9a11f06bdb3bdcabbc37dfd5f4cce2a213e49
 MegaCrit.Sts2.Core.Commands.PowerCmd::ModifyAmount(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Models.PowerModel,System.Decimal,MegaCrit.Sts2.Core.Entities.Creatures.Creature,MegaCrit.Sts2.Core.Models.CardModel,System.Boolean)=4435d3ea9620c9df65bd8aeeed9bbe2e5400859a
@@ -20,7 +19,6 @@ MegaCrit.Sts2.Core.Models.CardModel::PlayPowerCardFlyVfx()=c1d03751014a7a3a09ab2
 MegaCrit.Sts2.Core.Models.CardModel::SpendResources()=606bb756579a1afc58931fd3606158feacadf00f
 MegaCrit.Sts2.Core.Models.Cards.BladeOfInk::OnPlay(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Cards.CardPlay)=75d9c837b88b082557edcbdb8858c12ca9624ef0
 MegaCrit.Sts2.Core.Models.Cards.BodySlam::OnPlay(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Cards.CardPlay)=2f0d7ad9b02ac014b0901244fd8c44d0ab720bb8
-MegaCrit.Sts2.Core.Models.Cards.Compact::OnPlay(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Cards.CardPlay)=67aeb250fb4cd34ccefa10a9ef78843a67ff6719
 MegaCrit.Sts2.Core.Models.Cards.CrashLanding::OnPlay(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Cards.CardPlay)=cb003f1207c8773a80f71f3518574ef238740b06
 MegaCrit.Sts2.Core.Models.Cards.DecisionsDecisions::OnPlay(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Cards.CardPlay)=268e288ff6ea7e17e5a6104538a1ec02912d6eb0
 MegaCrit.Sts2.Core.Models.Cards.GrandFinale::OnPlay(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Cards.CardPlay)=0584bb255b9ad8cd72c3fde98a933784925169fd
@@ -42,10 +40,8 @@ MegaCrit.Sts2.Core.Models.Orbs.Mock.MockCombatCleanupOrb::Evoke(MegaCrit.Sts2.Co
 MegaCrit.Sts2.Core.Models.Orbs.Mock.MockTurnEndSuspendOrb::Evoke(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext)=3efdad304338e0214eb4be039ffd710aa152e179
 MegaCrit.Sts2.Core.Models.Orbs.PlasmaOrb::Evoke(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext)=c682df3c4e62037dfa0c9056c04777c1f7c5dbb3
 MegaCrit.Sts2.Core.Models.PowerModel::GetScaledAmountForMultiplayer(MegaCrit.Sts2.Core.Combat.ICombatState,MegaCrit.Sts2.Core.Entities.Creatures.Creature,System.Decimal,MegaCrit.Sts2.Core.Entities.Creatures.Creature,MegaCrit.Sts2.Core.Models.CardModel)=db3ccde409368750187126277f615c3ba0b2c3d9
-MegaCrit.Sts2.Core.Models.PowerModel::GetTypeForAmount(System.Decimal)=152828c2b0649dbd79662a11236489d47be2940c
 MegaCrit.Sts2.Core.Models.Powers.ArtifactPower::GetScaledAmountForMultiplayer(MegaCrit.Sts2.Core.Combat.ICombatState,MegaCrit.Sts2.Core.Entities.Creatures.Creature,System.Decimal,MegaCrit.Sts2.Core.Entities.Creatures.Creature,MegaCrit.Sts2.Core.Models.CardModel)=240e70a0e3d0d0261b70b64cf144c11c8c50ee5b
 MegaCrit.Sts2.Core.Models.Powers.ArtifactPower::TryModifyPowerAmountReceived(MegaCrit.Sts2.Core.Models.PowerModel,MegaCrit.Sts2.Core.Entities.Creatures.Creature,System.Decimal,MegaCrit.Sts2.Core.Entities.Creatures.Creature,System.Decimal&)=5534be422bc8f0b67091e4a4daaee8fc68e7800f
-MegaCrit.Sts2.Core.Models.Powers.AutomationPower::AfterCardDrawn(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Models.CardModel,System.Boolean)=61f1b05e5305b70d6829f83ccfb010ceb837fe7f
 MegaCrit.Sts2.Core.Models.Powers.CorrosiveWavePower::AfterSideTurnEnd(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Combat.CombatSide,System.Collections.Generic.IEnumerable`1[[MegaCrit.Sts2.Core.Entities.Creatures.Creature, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null]])=acc19ac36b5447a6aa940f10fc2302ebfd0a513f
 MegaCrit.Sts2.Core.Models.Powers.CreativeAiPower::BeforeHandDraw(MegaCrit.Sts2.Core.Entities.Players.Player,MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Combat.ICombatState)=f0e681751e33d2d7f66e9593aeb57f0af9b44404
 MegaCrit.Sts2.Core.Models.Powers.EntropyPower::AfterPlayerTurnStart(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Players.Player)=81889dd611db9e7ab95fa72e3dc4b8eaab29b6a4
@@ -59,7 +55,6 @@ MegaCrit.Sts2.Core.Models.Powers.SlipperyPower::GetScaledAmountForMultiplayer(Me
 MegaCrit.Sts2.Core.Models.Powers.StormPower::AfterCardPlayed(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Cards.CardPlay)=bb11f64cc1aa52d8494cf28fc3822555a96c1908
 MegaCrit.Sts2.Core.Models.Powers.StormPower::BeforeCardPlayed(MegaCrit.Sts2.Core.Entities.Cards.CardPlay)=fd477ee9eba876ff4ea7518349b2cea17b9288c2
 MegaCrit.Sts2.Core.Models.Relics.DustyTome::AfterObtained()=35170800030715cf97b2a5273f522fd914b4b7e9
-MegaCrit.Sts2.Core.MonsterMoves.Intents.AbstractIntent::GetHoverTip(System.Collections.Generic.IEnumerable`1[[MegaCrit.Sts2.Core.Entities.Creatures.Creature, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null]],MegaCrit.Sts2.Core.Entities.Creatures.Creature)=f617e1efa016751ab7145c0c74fb726c0a51f8e5
 MegaCrit.Sts2.Core.Nodes.Combat.NCardPlayQueue::BeforeRemoteCardPlayResumedAfterPlayerChoice(MegaCrit.Sts2.Core.GameActions.GameAction)=d78e9c867aad3d8b99eea6ffaa4405065d45fa59
 MegaCrit.Sts2.Core.Nodes.Combat.NCreatureVisuals::AddFormVfx(MegaCrit.Sts2.Core.Nodes.Vfx.Forms.NFormVfx)=da1ac953496f4089751feb10b6daa84e589bcd0e
 MegaCrit.Sts2.Core.Nodes.Combat.NCreatureVisuals::RemoveFormVfx()=92c6e15fec62769ae4cc5bce8627614809ed7891
@@ -70,7 +65,6 @@ MegaCrit.Sts2.Core.Nodes.Relics.NRelicBasicHolder::OnFocus()=be251d7e202b9f66658
 MegaCrit.Sts2.Core.Nodes.Relics.NRelicBasicHolder::OnUnfocus()=a7f1023c8786acdbfdaa8a2e69f63005492d314b
 MegaCrit.Sts2.Core.Nodes.Relics.NRelicInventoryHolder::DoFlash()=37b001a0569779eb0998a1a8306931ebdce00112
 MegaCrit.Sts2.Core.Nodes.Relics.NRelicInventoryHolder::PlayNewlyAcquiredAnimation(System.Nullable`1[[Godot.Vector2, GodotSharp, Version=4.5.1.0, Culture=neutral, PublicKeyToken=null]],System.Nullable`1[[Godot.Vector2, GodotSharp, Version=4.5.1.0, Culture=neutral, PublicKeyToken=null]])=f3f956c741c1c1567a8b6232eafdd2f8ffd5f737
-MegaCrit.Sts2.Core.Nodes.Screens.InspectScreens.NInspectRelicScreen::UpdateRelicDisplay()=6ef3e9b75382a4d2c420ac235add058190f93d4d
 MegaCrit.Sts2.Core.Nodes.Screens.Shops.NMerchantRelic::OnSuccessfulPurchase(MegaCrit.Sts2.Core.Entities.Merchant.PurchaseStatus,MegaCrit.Sts2.Core.Entities.Merchant.MerchantEntry)=e2eeb946152f169c76096059ab85f71c9747b789
 MegaCrit.Sts2.Core.Models.Powers.LoopPower::AfterPlayerTurnStart(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Players.Player)=5b465e6e8eb44f8251800cad4d62f31fc76b21b4
 MegaCrit.Sts2.Core.Models.Powers.LoopPower+<AfterPlayerTurnStart>d__4::MoveNext()=0ad86f76964058556fe82fb4a673c0ed913dcb66
@@ -93,7 +87,6 @@ MegaCrit.Sts2.Core.Commands.CreatureCmd+<GainBlock>d__18::MoveNext()=035da38434f
 MegaCrit.Sts2.Core.Commands.CreatureCmd+<GainMaxHp>d__22::MoveNext()=d40504f112230b09be6a92ffce480d6b772a567e
 MegaCrit.Sts2.Core.Commands.CreatureCmd+<Heal>d__20::MoveNext()=4c19845b5c46e514716990a0adedcdfb42996c7f
 MegaCrit.Sts2.Core.Commands.CreatureCmd+<LoseMaxHp>d__23::MoveNext()=03131b795417873f4271552451d013902c0dd500
-MegaCrit.Sts2.Core.Commands.CreatureCmd+<SetMaxHp>d__24::MoveNext()=2a4f515db6d64664d2cc97f25d40ae2b5a5a958f
 MegaCrit.Sts2.Core.Commands.PowerCmd+<ModifyAmount>d__6::MoveNext()=c43444b969b39391df4f313401fe354c58440d72
 MegaCrit.Sts2.Core.Commands.RelicCmd+<Obtain>d__1::MoveNext()=729297221e8f06e197353561dc25793a3d58ee4f
 MegaCrit.Sts2.Core.Entities.Merchant.MerchantRelicEntry+<OnTryPurchase>d__11::MoveNext()=dc964ec768ac6fa3fc0160738b81298b5aa32259
@@ -101,7 +94,6 @@ MegaCrit.Sts2.Core.Models.CardModel+<PlayPowerCardFlyVfx>d__341::MoveNext()=7a6c
 MegaCrit.Sts2.Core.Models.CardModel+<SpendResources>d__336::MoveNext()=02ce26c48c82cd43b91a0bba688bb25cc7c406e6
 MegaCrit.Sts2.Core.Models.Cards.BladeOfInk+<OnPlay>d__5::MoveNext()=b5015656f422709425ddbd1ccca1729c0817d922
 MegaCrit.Sts2.Core.Models.Cards.BodySlam+<OnPlay>d__5::MoveNext()=91e0371a1ba84e1e950601699b71c086dd2546c8
-MegaCrit.Sts2.Core.Models.Cards.Compact+<OnPlay>d__7::MoveNext()=51bf601085cc450bd4e3b25c958dcc166f75a004
 MegaCrit.Sts2.Core.Models.Cards.CrashLanding+<OnPlay>d__5::MoveNext()=7873f1ef7e2d6c117808eaa1ac3bc633be6eacb3
 MegaCrit.Sts2.Core.Models.Cards.DecisionsDecisions+<OnPlay>d__7::MoveNext()=6633ad82460205a23b96b962ac52b3cf7c57641f
 MegaCrit.Sts2.Core.Models.Cards.GrandFinale+<OnPlay>d__5::MoveNext()=28ab1412a3ae0725fffda556e3a6f2f8a579eb72
@@ -119,7 +111,6 @@ MegaCrit.Sts2.Core.Models.Orbs.GlassOrb+<Evoke>d__11::MoveNext()=ec9e7104ecaa395
 MegaCrit.Sts2.Core.Models.Orbs.LightningOrb+<ApplyLightningDamage>d__15::MoveNext()=0b30e86f53559df8383aabfaa5c2aa776c9a6394
 MegaCrit.Sts2.Core.Models.Orbs.LightningOrb+<Evoke>d__14::MoveNext()=2f7ce40556f186952e995b73f18c004b84089634
 MegaCrit.Sts2.Core.Models.Orbs.PlasmaOrb+<Evoke>d__10::MoveNext()=64a2aececb031b7edf431db98578395015b668aa
-MegaCrit.Sts2.Core.Models.Powers.AutomationPower+<AfterCardDrawn>d__14::MoveNext()=fc14b870ac1ce563b89f5fab4c59574c21334dfe
 MegaCrit.Sts2.Core.Models.Powers.CorrosiveWavePower+<AfterSideTurnEnd>d__7::MoveNext()=e71c2919edf3388d869e83f6c6a17dcc3b38f1cb
 MegaCrit.Sts2.Core.Models.Powers.CreativeAiPower+<BeforeHandDraw>d__4::MoveNext()=fc6c5c7eb3ae8c62b701337f79568cb218af3162
 MegaCrit.Sts2.Core.Models.Powers.EntropyPower+<AfterPlayerTurnStart>d__6::MoveNext()=cc343cb3c4f6a751c7a71cedaa1cc58387b72fb7

@@ -99,6 +99,12 @@ internal static partial class HextechCombatHooks
 		private static bool Prefix(Creature creature, ref decimal amount, ref Task __result, out HealPostState __state)
 		{
 			__state = default;
+			// 进入本前缀时治疗量已不大于 0（原版或其他模组的前缀给的），不由我们跳过，照原版执行。
+			if (amount <= 0m)
+			{
+				return true;
+			}
+
 			if (NearDeathFeastRune.IsDyingButAlive(creature) || HextechEnemyNearDeath.IsDyingButAlive(creature))
 			{
 				return SkipHeal(ref __result);
@@ -155,7 +161,8 @@ internal static partial class HextechCombatHooks
 			return true;
 		}
 
-		// 原版 Heal 对 0 也播音效/特效，禁止或被吃掉的回血只能跳过原方法（见 architecture.md 已裁决保留）。
+		// 原版 Heal 对 0 也播音效/特效，被本模组禁止或吃掉的回血只能跳过原方法（见 architecture.md 已裁决保留）。
+		// 只跳过本前缀自己改到 0 的治疗；进来时就是 0 的治疗交给原版，不吞掉其他模组的处理。
 		private static bool SkipHeal(ref Task result)
 		{
 			result = Task.CompletedTask;

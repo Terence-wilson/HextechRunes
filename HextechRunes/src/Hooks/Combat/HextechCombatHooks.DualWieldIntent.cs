@@ -100,9 +100,9 @@ internal static partial class HextechCombatHooks
 		[HarmonyPrepare]
 		private static bool Prepare() => DualWieldFieldsAvailable;
 
-		[HarmonyPrefix]
-		[HarmonyPriority(Priority.Low)]
-		private static bool Prefix(
+		// 不跳过原版：原版提示照常生成（纯计算），之后换成「双段」等价意图的提示。
+		[HarmonyPostfix]
+		private static void Postfix(
 			AbstractIntent __instance,
 			IEnumerable<Creature> targets,
 			Creature owner,
@@ -113,18 +113,15 @@ internal static partial class HextechCombatHooks
 			{
 				if (TryCreateDualWieldIntent(__instance, owner, out DualWieldAttackIntent? transformed))
 				{
-					// transformed 自身是 DualWieldAttackIntent,再次进入本 prefix 会被下方类型守卫挡掉,不会递归。
+					// transformed 自身是 DualWieldAttackIntent,再次进入本后缀会被类型守卫挡掉,不会递归。
 					__result = transformed.GetHoverTip(targets, owner);
-					return false;
 				}
 			}
 			catch (Exception ex)
 			{
-				// prefix 当场跑 DamageCalc→ModifyDamage 链,异常会打断调用方;失败放行原版。
-				LogDualWieldIntentFailure("DualWieldHoverTipPatch.Prefix", ex);
+				// 当场跑 DamageCalc→ModifyDamage 链,异常会打断调用方;失败时保留原版提示。
+				LogDualWieldIntentFailure("DualWieldHoverTipPatch.Postfix", ex);
 			}
-
-			return true;
 		}
 	}
 }
