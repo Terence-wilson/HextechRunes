@@ -136,6 +136,17 @@ internal static class HextechAssets
 			return RelicImages + "madScientistRune.png";
 		}
 
+		// 敌方质变借用同品阶的玩家质变图标：黄金阶的质变：棱彩阶、棱彩阶的质变：混沌。
+		if (relic is TransmuteSilverHex)
+		{
+			return RelicImages + "transmutePrismaticRune.png";
+		}
+
+		if (relic is TransmuteGoldHex)
+		{
+			return RelicImages + "transmuteChaosRune.png";
+		}
+
 		if (relic is SomethingForNothingRune)
 		{
 			return RelicImages + "acceleratingSorceryRune.png";

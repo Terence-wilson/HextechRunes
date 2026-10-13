@@ -84,7 +84,6 @@ internal static class HextechMonsterHexRegistry
 		Monster<DuffsVintageRune>(MonsterHexKind.DuffsVintage, HextechRarityTier.Prismatic),
 		Monster<HastyScribbleRune>(MonsterHexKind.HastyScribble, HextechRarityTier.Prismatic),
 		Monster<LagavulinMatriarchHex>(MonsterHexKind.LagavulinMatriarch, HextechRarityTier.Prismatic),
-		Monster<ShoulderVakuRune>(MonsterHexKind.ShoulderVaku, HextechRarityTier.Prismatic),
 		Monster<UpgradeRune>(MonsterHexKind.Upgrade, HextechRarityTier.Prismatic),
 		Monster<NearDeathFeastRune>(MonsterHexKind.NearDeathFeast, HextechRarityTier.Prismatic),
 		Monster<ExoskeletonHex>(MonsterHexKind.Exoskeleton, HextechRarityTier.Prismatic),
@@ -148,7 +147,9 @@ internal static class HextechMonsterHexRegistry
 		Monster<MoreTheMerrierRune>(MonsterHexKind.MoreTheMerrier, HextechRarityTier.Gold),
 		Monster<EnlightenmentHex>(MonsterHexKind.Enlightenment, HextechRarityTier.Prismatic),
 		Monster<CorruptHeartHex>(MonsterHexKind.CorruptHeart, HextechRarityTier.Prismatic),
-		Monster<BadTasteRune>(MonsterHexKind.BadTaste, HextechRarityTier.Silver)
+		Monster<BadTasteRune>(MonsterHexKind.BadTaste, HextechRarityTier.Silver),
+		Monster<TransmuteSilverHex>(MonsterHexKind.TransmuteSilver, HextechRarityTier.Gold),
+		Monster<TransmuteGoldHex>(MonsterHexKind.TransmuteGold, HextechRarityTier.Prismatic)
 	];
 
 	private static MonsterHexRegistration Monster<TRelic>(

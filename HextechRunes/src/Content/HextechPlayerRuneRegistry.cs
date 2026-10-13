@@ -317,7 +317,6 @@ internal static class HextechPlayerRuneRegistry
 		Rune<ForgottenSoulRune>(HextechRarityTier.Prismatic),
 		Rune<UpgradeRune>(HextechRarityTier.Prismatic),
 		Rune<OmniDragonSoulRune>(HextechRarityTier.Prismatic),
-		Rune<ShoulderVakuRune>(HextechRarityTier.Prismatic, flags: PlayerRuneFlags.Disabled),
 		Rune<CardInspectionRune>(HextechRarityTier.Prismatic, flags: PlayerRuneFlags.Disabled, tagKey: "DRAW"),
 		Rune<PrimitiveMadnessRune>(HextechRarityTier.Prismatic, flags: PlayerRuneFlags.Disabled),
 		Rune<ThoughtOverwriteRune>(HextechRarityTier.Prismatic, characterPool: PlayerRuneCharacterPool.Necrobinder, characterOrder: 17, tagKey: "VOID"),

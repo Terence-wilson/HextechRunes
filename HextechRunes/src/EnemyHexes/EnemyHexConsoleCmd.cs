@@ -77,6 +77,22 @@ public sealed class EnemyHexConsoleCmd : AbstractConsoleCmd
 			return new CmdResult(success: true, $"敌方已拥有海克斯 {hex}。");
 		}
 
+		if (HextechEnemyTransmute.GetTargetRarity(hex).HasValue)
+		{
+			IReadOnlyList<MonsterHexKind> active = modifier.GetActiveMonsterHexes();
+			MonsterHexKind[] gained = HextechEnemyTransmute
+				.ExpandForRun(modifier.ActiveRunState, modifier, $"console-{active.Count}", [ .. active, hex ])
+				.Except(active)
+				.ToArray();
+			foreach (MonsterHexKind gainedHex in gained)
+			{
+				modifier.DebugAddMonsterHex(gainedHex);
+			}
+
+			HextechEnemyUi.Refresh(modifier);
+			return new CmdResult(ApplyIfNeeded(modifier), success: true, $"敌方海克斯 {hex} 已质变为：{string.Join(", ", gained)}。");
+		}
+
 		modifier.DebugAddMonsterHex(hex);
 		HextechEnemyUi.Refresh(modifier);
 		return new CmdResult(ApplyIfNeeded(modifier), success: true, $"已添加敌方海克斯 {hex}。");

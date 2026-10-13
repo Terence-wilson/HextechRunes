@@ -80,7 +80,6 @@ internal static class HextechEnemyHexEffects
 		new DuffsVintageEnemyHex(),
 		new HastyScribbleEnemyHex(),
 		new LagavulinMatriarchEnemyHex(),
-		new ShoulderVakuEnemyHex(),
 		new UpgradeEnemyHex(),
 		new NearDeathFeastEnemyHex(),
 		new ExoskeletonEnemyHex(),
@@ -142,7 +141,9 @@ internal static class HextechEnemyHexEffects
 		new MoreTheMerrierEnemyHex(),
 		new EnlightenmentEnemyHex(),
 		new CorruptHeartEnemyHex(),
-		new BadTasteEnemyHex()
+		new BadTasteEnemyHex(),
+		new TransmuteSilverEnemyHex(),
+		new TransmuteGoldEnemyHex()
 	]);
 
 	internal static IEnumerable<HextechEnemyHexEffect> GetActive(HextechMayhemModifier modifier)

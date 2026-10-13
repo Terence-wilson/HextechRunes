@@ -65,6 +65,20 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		return NRun.Instance?.GlobalUi?.TopBar?.Map;
 	}
 
+	/// <summary>
+	/// 卡组等全屏界面关闭时，顶层是还没选完的选择界面、且地图没开：应回到选择界面，而不是让开局地图房间重新打开地图。
+	/// 外部表现层自己管理地图，不接管。
+	/// </summary>
+	internal static bool ShouldReturnToSelectionAfterCapstone()
+	{
+		return NOverlayStack.Instance?.Peek() is HextechRuneSelectionScreen screen
+			&& !screen._closed
+			&& (!screen._choiceLocked || screen._blockMapUntilDismissed)
+			&& !screen.IsExternallyPresented
+			&& screen.IsInsideTree()
+			&& NMapScreen.Instance?.IsOpen != true;
+	}
+
 	public void AfterOverlayClosed()
 	{
 		if (_closed)

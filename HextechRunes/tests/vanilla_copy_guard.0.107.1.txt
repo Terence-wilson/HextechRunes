@@ -123,3 +123,4 @@ MegaCrit.Sts2.Core.Entities.Orbs.OrbQueue::SmallWait()=67768e3126e04987847b8017a
 MegaCrit.Sts2.Core.Entities.Orbs.OrbQueue+<SmallWait>d__18::MoveNext()=9773d26da0217a3a44a693597bc34d0f3e678ceb
 MegaCrit.Sts2.Core.Models.Powers.RollingBoulderPower+<AfterPlayerTurnStart>d__8::MoveNext()=dd1060b150f27f4ab1bf3e7fc09903bb0df2714d
 MegaCrit.Sts2.Core.Nodes.Screens.InspectScreens.NInspectRelicScreen::UpdateRelicDisplay()=f89a0f7991eba4dc7db92db1980a65aa0ecabb90
+MegaCrit.Sts2.Core.Nodes.Rooms.NMapRoom::ReopenMap()=f904cfcd05f49bddca4e5026aec64a0af8069cf7

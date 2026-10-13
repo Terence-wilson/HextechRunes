@@ -181,3 +181,13 @@ public sealed class EnlightenmentHex : EnemyHexIconRelicBase
 public sealed class EntomancerHex : EnemyHexIconRelicBase
 {
 }
+
+/// <summary>质变：白银阶（敌方黄金）；图标借用玩家"质变：棱彩阶"</summary>
+public sealed class TransmuteSilverHex : EnemyHexIconRelicBase
+{
+}
+
+/// <summary>质变：黄金阶（敌方棱彩）；图标借用玩家"质变：混沌"</summary>
+public sealed class TransmuteGoldHex : EnemyHexIconRelicBase
+{
+}
