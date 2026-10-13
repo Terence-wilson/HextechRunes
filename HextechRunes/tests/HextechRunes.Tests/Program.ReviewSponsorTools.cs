@@ -24,23 +24,36 @@ internal static partial class Program
 			CollectSavedPropertyNames(typeof(SponsorCatalog).Assembly, declaredInAssemblyOnly: true));
 	}
 
-	// 宿主已知却没有不高于它的变体时必须返回 null(停止加载),不能回退到更新的变体;宿主未知才用最新变体。
-	// 拓展包加载器以链接方式编译同一份源码,选择规则只在这里测一次。
+	// 宿主已知却没有对应变体时必须返回 null(停止加载),不能回退到更新或更旧小版本的变体;宿主未知才用最新变体。
+	// 只有最新变体向后兼容更新的游戏,较旧的变体只服务同一小版本。拓展包加载器以链接方式编译同一份源码,选择规则只在这里测一次。
 	[HextechTest]
 	private static void LoaderSelectVariantNeverFallsBackToNewerVariant()
 	{
 		MainLoader.VariantCandidate[] main =
 		[
 			new("0.107.1", new Version(0, 107, 1), "a"),
-			new("0.110.0", new Version(0, 110, 0), "b"),
 			new("0.111.0", new Version(0, 111, 0), "c")
 		];
 		Equal("0.107.1", MainLoader.SelectVariant(main, new Version(0, 107, 1))?.CompatTarget, "exact oldest host");
-		Equal("0.107.1", MainLoader.SelectVariant(main, new Version(0, 109, 0))?.CompatTarget, "between targets picks the older one");
+		Equal("0.107.1", MainLoader.SelectVariant(main, new Version(0, 107, 3))?.CompatTarget, "same minor patch host uses that variant");
+		Expect(MainLoader.SelectVariant(main, new Version(0, 109, 0)) == null, "retired minor between targets refuses to load");
+		Expect(MainLoader.SelectVariant(main, new Version(0, 110, 0)) == null, "retired 0.110 refuses instead of loading the 0.107.1 variant");
+		Equal("0.111.0", MainLoader.SelectVariant(main, new Version(0, 111, 0))?.CompatTarget, "exact newest host");
 		Equal("0.111.0", MainLoader.SelectVariant(main, new Version(0, 112, 0))?.CompatTarget, "newer host picks the newest variant");
 		Equal("0.111.0", MainLoader.SelectVariant(main, null)?.CompatTarget, "unknown host picks the newest variant");
 		Expect(MainLoader.SelectVariant(main, new Version(0, 106, 0)) == null, "host older than every variant refuses to load");
+		Expect(MainLoader.SelectVariant(main, new Version(0, 107, 0)) == null, "older patch of the same minor refuses to load");
 		Expect(MainLoader.SelectVariant([], null) == null, "no variants");
+
+		// 最新目标的 DLL 缺失或哈希不符被剔除后，兼容范围仍按清单声明的最新目标算，旧变体不能顶上。
+		MainLoader.VariantCandidate[] onlyOld = [ main[0] ];
+		Version declaredNewest = new(0, 111, 0);
+		Expect(MainLoader.SelectVariant(onlyOld, new Version(0, 110, 0), declaredNewest) == null, "missing latest: 0.110 host still refuses");
+		Expect(MainLoader.SelectVariant(onlyOld, new Version(0, 111, 0), declaredNewest) == null, "missing latest: 0.111 host does not fall back to 0.107.1");
+		Expect(MainLoader.SelectVariant(onlyOld, null, declaredNewest) == null, "missing latest: unknown host does not fall back to 0.107.1");
+		Equal("0.107.1", MainLoader.SelectVariant(onlyOld, new Version(0, 107, 1), declaredNewest)?.CompatTarget, "missing latest: 0.107 host still loads its own variant");
+		Expect(!MainLoader.IsCompatibleTarget(new Version(0, 107, 1), new Version(0, 111, 0), declaredNewest), "0.107.1 never serves a 0.111 host");
+		Expect(MainLoader.IsCompatibleTarget(new Version(0, 111, 0), new Version(0, 111, 0), declaredNewest), "a declared 0.111 target serves 0.111 even when its file is unusable, so the failure is not reported as an unsupported game");
 	}
 
 	// 智能应用控制拦截时 LoadFromAssemblyPath 抛带 0x800711C7 的 FileLoadException;
@@ -89,19 +102,19 @@ internal static partial class Program
 		try
 		{
 			string libRoot = Path.Combine(root, "lib");
-			string variantDirectory = Path.Combine(libRoot, "0.110.0");
+			string variantDirectory = Path.Combine(libRoot, "0.111.0");
 			Directory.CreateDirectory(variantDirectory);
-			File.WriteAllText(Path.Combine(variantDirectory, "compat-target.txt"), "0.110.0");
+			File.WriteAllText(Path.Combine(variantDirectory, "compat-target.txt"), "0.111.0");
 			byte[] dll = "not a real assembly"u8.ToArray();
 			File.WriteAllBytes(Path.Combine(variantDirectory, "HextechRunesSponsorPack.dll"), dll);
 			string manifest = JsonSerializer.Serialize(new
 			{
-				variants = new[] { new { compatTarget = "0.110.0", directory = "lib/0.110.0", assembly = "HextechRunesSponsorPack.dll", sha256 = Convert.ToHexString(SHA256.HashData(dll)) } }
+				variants = new[] { new { compatTarget = "0.111.0", directory = "lib/0.111.0", assembly = "HextechRunesSponsorPack.dll", sha256 = Convert.ToHexString(SHA256.HashData(dll)) } }
 			});
 
 			File.WriteAllText(Path.Combine(root, "hextech-runes-sponsor-pack-variants.manifest"), manifest);
-			Equal("0.110.0", SponsorLoader.PickVariant(root, libRoot, new Version(0, 111, 0))?.CompatTarget, "sponsor loader reads its own manifest");
-			Expect(SponsorLoader.PickVariant(root, libRoot, new Version(0, 107, 1)) == null, "known older host: sponsor loader stops instead of loading 0.110.0");
+			Equal("0.111.0", SponsorLoader.PickVariant(root, libRoot, new Version(0, 112, 0))?.CompatTarget, "sponsor loader reads its own manifest");
+			Expect(SponsorLoader.PickVariant(root, libRoot, new Version(0, 107, 1)) == null, "known older host: sponsor loader stops instead of loading 0.111.0");
 		}
 		finally
 		{

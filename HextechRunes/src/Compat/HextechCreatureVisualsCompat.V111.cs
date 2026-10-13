@@ -6,7 +6,7 @@ namespace HextechRunes;
 
 internal static class HextechCreatureVisualsCompat
 {
-	// 0.111.0 起形态特效容器为 FormVfxHolder 属性（0.110.0 是 _formVfxHolder 字段）。
+	// 0.111.0 起形态特效容器为 FormVfxHolder 属性。
 	internal static Control? GetFormVfxHolder(NCreatureVisuals visuals) => visuals.FormVfxHolder;
 }
 #endif

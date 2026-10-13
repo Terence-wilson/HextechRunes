@@ -75,7 +75,7 @@ public static partial class LoaderBootstrap
 				"using the newest bundled variant.");
 		}
 
-		VariantCandidate? variant = PickVariant(loaderDirectory, libRoot, host.Numeric, out bool hostOlderThanAllVariants);
+		VariantCandidate? variant = PickVariant(loaderDirectory, libRoot, host.Numeric, out bool hostUnsupported);
 		if (variant == null)
 		{
 			// 变体全部无效,或已知宿主没有不高于它的有效变体(对应变体缺失/哈希不符/宿主早于最低支持版本):显式停止。
@@ -83,7 +83,7 @@ public static partial class LoaderBootstrap
 				$"{LogPrefix}No valid variant under {libRoot} compatible with host " +
 				$"{host.ReleaseLabel ?? host.Numeric?.ToString() ?? "unknown"}; refusing to load a newer variant.");
 			_hostVersionLabel = host.ReleaseLabel ?? host.Numeric?.ToString();
-			ReportLoadFailure(hostOlderThanAllVariants ? LoadFailureKind.UnsupportedGameVersion : LoadFailureKind.Other);
+			ReportLoadFailure(hostUnsupported ? LoadFailureKind.UnsupportedGameVersion : LoadFailureKind.Other);
 			return;
 		}
 
@@ -432,23 +432,26 @@ public static partial class LoaderBootstrap
 		return PickVariant(loaderDirectory, libRoot, host, out _);
 	}
 
-	/// <param name="hostOlderThanAllVariants">宿主已知且早于清单里所有有效变体,即游戏版本太旧;用于给玩家正确的提示。</param>
+	/// <param name="hostUnsupported">宿主已知但没有对应的变体（早于所有变体，或落在已退役的中间版本），即游戏版本不受支持;用于给玩家正确的提示。</param>
 	internal static VariantCandidate? PickVariant(
 		string loaderDirectory,
 		string libRoot,
 		Version? host,
-		out bool hostOlderThanAllVariants)
+		out bool hostUnsupported)
 	{
 		List<VariantCandidate> variants =
-			LoadVariantManifest(loaderDirectory, libRoot)
+			LoadVariantManifest(loaderDirectory, libRoot, out List<Version> declaredTargets)
 				.OrderBy(candidate => candidate.Version)
 				.ToList();
-		hostOlderThanAllVariants = host != null
-			&& variants.Count > 0
-			&& variants.All(candidate => candidate.Version > host);
+		// 兼容范围按清单声明的全部目标算，不看文件是否可用：最新目标的 DLL 缺失或哈希不符时，
+		// 不能把较旧的变体当成“最新”去服务更新的游戏。
+		Version? newestDeclared = declaredTargets.Count > 0 ? declaredTargets.Max() : null;
+		hostUnsupported = host != null
+			&& newestDeclared != null
+			&& !declaredTargets.Any(target => IsCompatibleTarget(target, host, newestDeclared));
 
-		// 只对选中的变体算 SHA256;不符就剔除后重选,结果与"先剔除所有不符的变体再选"相同。
-		while (SelectVariant(variants, host) is { } selected)
+		// 只对选中的变体算 SHA256;不符就剔除后重选。重选仍按声明的兼容范围,不会扩大到其他小版本。
+		while (SelectVariant(variants, host, newestDeclared) is { } selected)
 		{
 			if (MatchesExpectedHash(selected.DllPath, selected.Sha256))
 			{
@@ -463,31 +466,47 @@ public static partial class LoaderBootstrap
 	}
 
 	/// <summary>
-	/// 纯选择规则(不写日志,测试直接调用):宿主未知时用最新变体;宿主已知时取不高于宿主的最新变体,
+	/// 纯选择规则(不写日志,测试直接调用):按 <see cref="IsCompatibleTarget"/> 取兼容的变体,
 	/// 没有就返回 null 让调用方停止加载。回退到更新的变体只会把"局部文件不可用"
 	/// 扩大成"错误版本程序集进入模型注册与补丁系统",所以不再兜底。
 	/// </summary>
+	/// <param name="newestDeclared">清单声明的最新目标（含文件不可用的）；省略时取 <paramref name="sortedVariants"/> 里最新的。</param>
 	internal static VariantCandidate? SelectVariant(
 		IReadOnlyList<VariantCandidate> sortedVariants,
-		Version? host)
+		Version? host,
+		Version? newestDeclared = null)
 	{
 		if (sortedVariants.Count == 0)
 		{
 			return null;
 		}
 
-		if (host == null)
+		Version newest = newestDeclared ?? sortedVariants[^1].Version;
+		return sortedVariants.LastOrDefault(candidate => IsCompatibleTarget(candidate.Version, host, newest));
+	}
+
+	/// <summary>
+	/// 只有声明的最新目标向后兼容更新（或未知版本）的游戏；较旧的目标只服务同一小版本（0.107.x 用 0.107.1）。
+	/// 已退役的中间版本（0.108–0.110）没有对应目标，不能套用更旧的变体。
+	/// </summary>
+	internal static bool IsCompatibleTarget(Version target, Version? host, Version newestDeclared)
+	{
+		if (host == null || host >= newestDeclared)
 		{
-			return sortedVariants[^1];
+			return target == newestDeclared;
 		}
 
-		return sortedVariants.LastOrDefault(candidate => candidate.Version <= host);
+		return target <= host
+			&& target.Major == host.Major
+			&& target.Minor == host.Minor;
 	}
 
 	private static List<VariantCandidate> LoadVariantManifest(
 		string loaderDirectory,
-		string libRoot)
+		string libRoot,
+		out List<Version> declaredTargets)
 	{
+		declaredTargets = [];
 		string path = Path.Combine(loaderDirectory, VariantManifestName);
 		if (!File.Exists(path))
 		{
@@ -514,6 +533,14 @@ public static partial class LoaderBootstrap
 			Log.Error(
 				$"{LogPrefix}Variant manifest contains no variants: {path}");
 			return [];
+		}
+
+		foreach (BundleVariantEntry entry in manifest.Variants)
+		{
+			if (TryParseVersion(entry.CompatTarget?.Trim() ?? string.Empty, out Version declared))
+			{
+				declaredTargets.Add(declared);
+			}
 		}
 
 		string fullLibRoot = Path.GetFullPath(libRoot);

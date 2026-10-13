@@ -220,23 +220,22 @@ internal static class HextechInspectHooks
 
 	/// <summary>检视界面当前是海克斯遗物时,按"已解锁且已发现"渲染它。</summary>
 	/// <remarks>
-	/// 跳过型前缀:原版私有 <c>NInspectRelicScreen.UpdateRelicDisplay</c> 按 <c>_allUnlockedRelics.Contains(relic.CanonicalInstance)</c>
+	/// 原版私有 <c>NInspectRelicScreen.UpdateRelicDisplay</c> 按 <c>_allUnlockedRelics.Contains(relic.CanonicalInstance)</c>
 	/// 与 <c>SaveManager.IsRelicSeen</c> 硬分"未解锁/未发现/正常"三支,没有 Hook 能改这个分支判定;
 	/// 海克斯的隐藏遗物(不进 UnlockState)与缺规范实例的可变副本会落进"未解锁"分支。
-	/// 替换体逐项复刻原版"正常"分支(名称、稀有度、描述、风味、稀有度视觉、大图、提示)。
-	/// 激活条件:当前索引的遗物属于海克斯(<see cref="HextechCatalog.IsHextechCustomRelic"/>);其它遗物交给原版。
-	/// 版本:0.107.1 / 0.110.0 / 0.111.0 原方法一致,已进原版拷贝守卫;<see cref="Priority.Low"/> 让他人前缀先跑。
+	/// 不跳过原版:原版照常渲染后,后缀按原版"正常"分支逐项重写(名称、稀有度、描述、风味、稀有度视觉、大图、提示),
+	/// 三个分支设置的字段都会被覆盖。激活条件:当前索引的遗物属于海克斯(<see cref="HextechCatalog.IsHextechCustomRelic"/>)。
 	/// </remarks>
 	[HarmonyPatch(typeof(NInspectRelicScreen), "UpdateRelicDisplay")]
-	[HextechPatch("ui.inspect.update-display", "遗物检视界面", Optional = true)]
+	// 后缀逐项复制原版"正常"分支，目标 IL 仍由原版拷贝守卫冻结。
+	[HextechPatch("ui.inspect.update-display", "遗物检视界面", Optional = true, CopiesVanillaLogic = true)]
 	private static class UpdateRelicDisplayPatch
 	{
 		[HarmonyPrepare]
 		private static bool Prepare() => Members != null;
 
-		[HarmonyPrefix]
-		[HarmonyPriority(Priority.Low)]
-		private static bool Prefix(NInspectRelicScreen __instance)
+		[HarmonyPostfix]
+		private static void Postfix(NInspectRelicScreen __instance)
 		{
 			InspectScreenMembers members = Members!;
 			if (members.Relics.GetValue(__instance) is IReadOnlyList<RelicModel> relics
@@ -248,11 +247,8 @@ internal static class HextechInspectHooks
 				if (HextechCatalog.IsHextechCustomRelic(relic))
 				{
 					RenderHextechInspect(members, __instance, relic);
-					return false;
 				}
 			}
-
-			return true;
 		}
 	}
 }

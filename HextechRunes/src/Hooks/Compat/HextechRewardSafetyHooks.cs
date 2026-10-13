@@ -82,6 +82,18 @@ internal static class HextechRewardSafetyHooks
 		state.RemainingDriftwoodRerolls = remaining - 1;
 	}
 
+	// 只有浮木（多份时按数量计重掷次数）和佩尔之翼（与浮木同时持有或多份时超过原版上限）需要接管。
+	internal static bool NeedsCardRewardAlternativesTakeover(CardReward cardReward)
+	{
+		return CardRewardStates.TryGetValue(cardReward, out _)
+			|| NeedsCardRewardAlternativesTakeover(cardReward.Player.Relics);
+	}
+
+	internal static bool NeedsCardRewardAlternativesTakeover(IEnumerable<RelicModel> relics)
+	{
+		return relics.Any(static relic => relic is Driftwood or PaelsWing);
+	}
+
 	private static int CountOwnedDriftwood(Player player)
 	{
 		return player.Relics.Count(static relic => relic is Driftwood);
@@ -235,8 +247,9 @@ internal static class HextechRewardSafetyHooks
 
 	// 跳过型前缀（已裁决保留，见 architecture.md）：原版 Generate 在 Hook.ModifyCardRewardAlternatives 之后
 	// 对超过 2 个备选项直接抛异常，本模组的多次浮木重掷与多份佩尔之翼献祭会超过这个上限，没有可用的 Hook 放宽它。
-	// 只在本局启用海克斯时替换；替换体逐步复制原版（跳过/重掷 → Hook.ModifyCardRewardAlternatives），
-	// 仅去掉数量上限并合并重复的献祭项。目标 IL 由原版拷贝守卫冻结（0.107.1/0.110.0/0.111.0）。
+	// 只在本局启用海克斯、且玩家持有浮木或佩尔之翼（或这份奖励已在按浮木次数计数）时替换，其余卡牌奖励走原版，
+	// 不挡其他模组在 Generate 上的前缀。替换体逐步复制原版（跳过/重掷 → Hook.ModifyCardRewardAlternatives），
+	// 仅去掉数量上限、按浮木数量计重掷次数并合并重复的献祭项。目标 IL 由原版拷贝守卫冻结（0.107.1/0.111.0）。
 	[HarmonyPatch(typeof(CardRewardAlternative), nameof(CardRewardAlternative.Generate), typeof(CardReward))]
 	[HextechPatch("reward.card-alternatives", "卡牌奖励备选项")]
 	private static class CardRewardAlternativesPatch
@@ -245,7 +258,8 @@ internal static class HextechRewardSafetyHooks
 		[HarmonyPriority(Priority.Low)]
 		private static bool Prefix(CardReward cardReward, ref IReadOnlyList<CardRewardAlternative> __result)
 		{
-			if (!HextechMayhemModifier.IsEnabledForRun(cardReward.Player.RunState))
+			if (!HextechMayhemModifier.IsEnabledForRun(cardReward.Player.RunState)
+				|| !NeedsCardRewardAlternativesTakeover(cardReward))
 			{
 				return true;
 			}

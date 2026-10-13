@@ -4,15 +4,13 @@ namespace HextechRunes;
 
 /// <summary>
 /// 升级：自动化——触发自动化效果(每抽 10 张的能量结算)时,额外抽 2 张牌。
-/// 原版触发逻辑原样复刻(prefix 替换),仅在触发点追加抽牌;计数器读写走反射
-/// (AutomationPower.Data.cardsLeft 为私有嵌套类型)。
+/// 不跳过原版:前缀读出抽牌前的计数,原版照常结算回能;本次会触发时,后缀在原版任务完成后追加抽牌。
+/// 计数器读取走反射(AutomationPower.Data.cardsLeft 为私有嵌套类型)。
 /// </summary>
 public sealed class AutomationUpgradeRune : CardUpgradeRuneBase<Automation>
 {
-	private const int TriggerThreshold = 10;
-
 	// 私有访问均对照原版 0.107.1~0.111.0：AutomationPower 私有嵌套类 Data 的公有字段 cardsLeft，
-	// PowerModel 的 protected GetInternalData<T>()、InvokeDisplayAmountChanged()、Flash()。
+	// PowerModel 的 protected GetInternalData<T>()。
 	// 任一缺失时进启动摘要，ShouldUseUpgradedDraw 返回 false，自动化回落原版(不追加抽牌)。
 	private static readonly Type? AutomationDataType = TryGetNestedType(typeof(AutomationPower), "Data");
 	private static readonly MethodInfo? PowerGetInternalDataMethod = AutomationDataType == null
@@ -22,21 +20,8 @@ public sealed class AutomationUpgradeRune : CardUpgradeRuneBase<Automation>
 	private static readonly FieldInfo? AutomationCardsLeftField = AutomationDataType == null
 		? null
 		: TryGetField(AutomationDataType, "cardsLeft", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-	private static readonly MethodInfo? PowerInvokeDisplayAmountChangedMethod = TryGetMethod(
-		typeof(PowerModel),
-		"InvokeDisplayAmountChanged",
-		BindingFlags.Instance | BindingFlags.NonPublic,
-		Type.EmptyTypes);
-	private static readonly MethodInfo? PowerFlashMethod = TryGetMethod(
-		typeof(PowerModel),
-		"Flash",
-		BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public,
-		Type.EmptyTypes);
-
 	private static bool IsReflectionAvailable => PowerGetInternalDataMethod != null
-		&& AutomationCardsLeftField != null
-		&& PowerInvokeDisplayAmountChangedMethod != null
-		&& PowerFlashMethod != null;
+		&& AutomationCardsLeftField != null;
 
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
@@ -57,37 +42,28 @@ public sealed class AutomationUpgradeRune : CardUpgradeRuneBase<Automation>
 			&& owner.GetRelic<AutomationUpgradeRune>() != null;
 	}
 
-	// 只在 ShouldUseUpgradedDraw 通过后调用：反射成员齐全、持有者存在且持有本符文。
-	internal static async Task AfterCardDrawnUpgraded(PlayerChoiceContext choiceContext, AutomationPower power, CardModel card, bool fromHandDraw)
+	// 原版本次抽牌会把计数减到 0 并回能（AutomationPower.AfterCardDrawn：cardsLeft-- 后 <= 0 即触发）。
+	internal static bool WillTrigger(int cardsLeftBeforeDraw) => cardsLeftBeforeDraw <= 1;
+
+	internal static int? ReadCardsLeft(AutomationPower power)
 	{
-		Player owner = power.Owner.Player!;
-		if (PowerGetInternalDataMethod!.Invoke(power, null) is not { } data
-			|| AutomationCardsLeftField!.GetValue(data) is not int storedCardsLeft)
+		return PowerGetInternalDataMethod!.Invoke(power, null) is { } data
+			&& AutomationCardsLeftField!.GetValue(data) is int cardsLeft
+				? cardsLeft
+				: null;
+	}
+
+	// 原版触发（回能、重置计数）完成后追加抽牌。
+	internal static async Task DrawAfterVanillaTrigger(Task vanilla, PlayerChoiceContext choiceContext, Player owner)
+	{
+		await vanilla;
+		if (owner.Creature.IsDead
+			|| owner.Creature.CombatState == null
+			|| owner.GetRelic<AutomationUpgradeRune>() is not AutomationUpgradeRune rune)
 		{
 			return;
 		}
 
-		int cardsLeft = Math.Max(0, storedCardsLeft - 1);
-		AutomationCardsLeftField.SetValue(data, cardsLeft);
-		PowerInvokeDisplayAmountChangedMethod!.Invoke(power, null);
-		if (cardsLeft > 0)
-		{
-			return;
-		}
-
-		// 原版触发:回能量并重置计数。
-		PowerFlashMethod!.Invoke(power, null);
-		await PlayerCmd.GainEnergy(power.Amount, owner);
-		AutomationCardsLeftField.SetValue(data, TriggerThreshold);
-		PowerInvokeDisplayAmountChangedMethod.Invoke(power, null);
-
-		// 符文追加:额外抽 2 张。
-		if (owner.Creature.IsDead || owner.Creature.CombatState == null)
-		{
-			return;
-		}
-
-		AutomationUpgradeRune rune = owner.GetRelic<AutomationUpgradeRune>()!;
 		rune.Flash();
 		await CardPileCmd.Draw(choiceContext, rune.DynamicVars.Cards.BaseValue, owner, fromHandDraw: false);
 	}
@@ -97,16 +73,20 @@ public sealed class AutomationUpgradeRune : CardUpgradeRuneBase<Automation>
 	private static class AutomationPatch
 	{
 		[HarmonyPrefix]
-		[HarmonyPriority(Priority.Low)]
-		private static bool Prefix(AutomationPower __instance, PlayerChoiceContext choiceContext, CardModel card, bool fromHandDraw, ref Task __result)
+		private static void Prefix(AutomationPower __instance, CardModel card, out int? __state)
 		{
-			if (!AutomationUpgradeRune.ShouldUseUpgradedDraw(__instance, card))
-			{
-				return true;
-			}
+			__state = AutomationUpgradeRune.ShouldUseUpgradedDraw(__instance, card)
+				? AutomationUpgradeRune.ReadCardsLeft(__instance)
+				: null;
+		}
 
-			__result = AutomationUpgradeRune.AfterCardDrawnUpgraded(choiceContext, __instance, card, fromHandDraw);
-			return false;
+		[HarmonyPostfix]
+		private static void Postfix(AutomationPower __instance, PlayerChoiceContext choiceContext, int? __state, ref Task __result)
+		{
+			if (__state is int cardsLeftBeforeDraw && AutomationUpgradeRune.WillTrigger(cardsLeftBeforeDraw))
+			{
+				__result = AutomationUpgradeRune.DrawAfterVanillaTrigger(__result, choiceContext, __instance.Owner.Player!);
+			}
 		}
 	}
 }

@@ -127,21 +127,21 @@ internal static partial class HextechCombatHooks
 	{
 		[HarmonyPrefix]
 		[HarmonyPriority(Priority.Low)]
-		private static bool Prefix(Creature creature, ref decimal amount, out bool __state)
+		// 不跳过原版：只把目标值改成换算后的最大生命。
+		private static void Prefix(Creature creature, ref decimal amount, out bool __state)
 		{
 			__state = false;
 			if (GoliathMaxHpGuard.IsActive
 				|| creature.Player is not Player player
 				|| HextechMaxHpScaling.GetPrimary(player) is not IHextechMaxHpBaseHolder primary)
 			{
-				return true;
+				return;
 			}
 
 			primary.BaseMaxHp = (int)Math.Max(1m, amount);
 			GoliathMaxHpGuard.Enter();
 			__state = true;
 			amount = HextechMaxHpScaling.GetScaledMaxHp(player, primary);
-			return true;
 		}
 
 		[HarmonyPostfix]

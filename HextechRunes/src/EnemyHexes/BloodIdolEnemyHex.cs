@@ -25,11 +25,12 @@ internal sealed class BloodIdolEnemyHex : HextechEnemyHexEffect
 			return;
 		}
 
+		// 战斗中（如夺金）获得金币时受到 1 点伤害，可被格挡。
 		await CreatureCmd.Damage(
 			new BlockingPlayerChoiceContext(),
 			player.Creature,
 			1m,
-			ValueProp.Unblockable | ValueProp.Unpowered,
+			ValueProp.Unpowered,
 			null,
 			null);
 	}
