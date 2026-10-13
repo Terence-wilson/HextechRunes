@@ -15,7 +15,7 @@
   "INFERNAL_DRAGON_SOUL_CARD.description": "每回合的首张攻击牌会对敌人施加[blue]{BurnPower}[/blue]层[gold]灼烧[/gold]。",
   "INFERNAL_DRAGON_SOUL_CARD.flavor": "第一击点燃整场战斗。",
   "HEXTECH_DRAGON_SOUL_CARD.title": "海克斯科技龙魂",
-  "HEXTECH_DRAGON_SOUL_CARD.description": "每回合额外获得[blue]{Energy}[/blue]点能量。",
+  "HEXTECH_DRAGON_SOUL_CARD.description": "每回合额外获得{Energy:energyIcons()}。",
   "HEXTECH_DRAGON_SOUL_CARD.flavor": "线圈里的闪电从不休眠。",
   "MOUNTAIN_DRAGON_SOUL_CARD.title": "山脉龙魂",
   "MOUNTAIN_DRAGON_SOUL_CARD.description": "回合开始时，获得[blue]{PlatingPower}[/blue]层[gold]覆甲[/gold]。",

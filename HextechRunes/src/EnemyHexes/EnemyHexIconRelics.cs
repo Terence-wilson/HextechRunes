@@ -191,3 +191,8 @@ public sealed class TransmuteSilverHex : EnemyHexIconRelicBase
 public sealed class TransmuteGoldHex : EnemyHexIconRelicBase
 {
 }
+
+/// <summary>MonsterHexKind.SpinToWin 的图标载体（棱彩）；我方符文"转出胜利"仍是 SpinToWinRune（黄金）</summary>
+public sealed class SpinToWinHex : EnemyHexIconRelicBase
+{
+}

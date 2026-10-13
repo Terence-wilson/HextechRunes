@@ -149,7 +149,8 @@ internal static class HextechMonsterHexRegistry
 		Monster<CorruptHeartHex>(MonsterHexKind.CorruptHeart, HextechRarityTier.Prismatic),
 		Monster<BadTasteRune>(MonsterHexKind.BadTaste, HextechRarityTier.Silver),
 		Monster<TransmuteSilverHex>(MonsterHexKind.TransmuteSilver, HextechRarityTier.Gold),
-		Monster<TransmuteGoldHex>(MonsterHexKind.TransmuteGold, HextechRarityTier.Prismatic)
+		Monster<TransmuteGoldHex>(MonsterHexKind.TransmuteGold, HextechRarityTier.Prismatic),
+		Monster<SpinToWinHex>(MonsterHexKind.SpinToWin, HextechRarityTier.Prismatic)
 	];
 
 	private static MonsterHexRegistration Monster<TRelic>(

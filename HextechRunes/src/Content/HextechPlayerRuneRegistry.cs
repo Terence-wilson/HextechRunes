@@ -16,6 +16,8 @@ internal static class HextechPlayerRuneRegistry
 		Rune<NimbleRune>(HextechRarityTier.Silver, tagKey: "RESOURCE"),
 		Rune<EscapePlanRune>(HextechRarityTier.Silver, flags: PlayerRuneFlags.Disabled),
 		Rune<BadTasteRune>(HextechRarityTier.Silver, tagKey: "SURVIVAL"),
+		Rune<BloodthirstRune>(HextechRarityTier.Silver, tagKey: "SURVIVAL"),
+		Rune<PuristRune>(HextechRarityTier.Silver, tagKey: "RESOURCE"),
 		Rune<FirstAidKitRune>(HextechRarityTier.Silver, tagKey: "SURVIVAL"),
 		Rune<RegenerationSuppressionRune>(HextechRarityTier.Silver, flags: PlayerRuneFlags.Disabled, tagKey: "OUTPUT"),
 		Rune<GiantSerpentsFangRune>(HextechRarityTier.Silver, tagKey: "OUTPUT"),

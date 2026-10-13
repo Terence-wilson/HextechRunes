@@ -1548,5 +1548,15 @@
   "TRANSMUTE_GOLD_HEX.description": "敵はランダムなゴールドHexルーンを[blue]2[/blue]個獲得する。",
   "TRANSMUTE_GOLD_HEX.flavor": "プリズムを割っても、どちらの欠片も金のまま。",
   "transmuteGoldHex.enemyDescription": "敵はランダムなゴールドHexルーンを[blue]2[/blue]個獲得する。",
+  "BLOODTHIRST_RUNE.title": "渇血",
+  "BLOODTHIRST_RUNE.description": "ブロックされていないダメージを与えたとき、そのダメージの[blue]{HealPercent}%[/blue]分のHPを回復する。",
+  "BLOODTHIRST_RUNE.flavor": "一口味わえば、もう止まらない。",
+  "PURIST_RUNE.title": "純粋主義者",
+  "PURIST_RUNE.description": "自分のターン中にカードを引くとき、代わりに同じ数のエナジーを得る。",
+  "PURIST_RUNE.flavor": "手札が少ないほど、道はまっすぐになる。",
+  "SPIN_TO_WIN_HEX.title": "回して勝利",
+  "SPIN_TO_WIN_HEX.description": "プレイヤーが自分のターン中に得たカードドローとエナジーは、次のターンに発動する。",
+  "SPIN_TO_WIN_HEX.flavor": "回るほどに、勝利は遠ざかる。",
+  "spinToWinHex.enemyDescription": "プレイヤーが自分のターン中に得たカードドローとエナジーは、次のターンに発動する。",
   "badTasteRune.enemyDescription": "敵がデバフを受けるたび、最大HPの[blue]1%[/blue]を回復する。"
 }

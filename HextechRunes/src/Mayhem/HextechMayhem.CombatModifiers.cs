@@ -56,32 +56,54 @@ internal sealed partial class HextechMayhemModifier
 	// ShouldDraw 是查询钩子，可能在真实抽牌之外被调用（其他模组预测抽牌），这里只记下"最近一次拦下了谁"，不动记账。
 	// 原版 CardPileCmd.Draw 与 HextechSelectedDrawHelper 在它返回 false 后同步紧接着调 AfterPreventingDraw，中间没有等待，
 	// 所以 After 读到的一定是这次真实查询的结果；模拟调用留下的记录会被下一次真实查询覆盖。不保存：两次调用之间不会存档。
-	private (Player Player, bool FromHandDraw)? _lastPreventedDraw;
+	private (Player Player, bool FromHandDraw, int RequestedCount)? _lastPreventedDraw;
 
 	public override bool ShouldDraw(Player player, bool fromHandDraw)
 	{
 		bool allowed = HextechEnemyHexDispatcher.All(
 			this,
 			(effect, context) => effect.ShouldDraw(context, player, fromHandDraw));
-		_lastPreventedDraw = allowed ? null : (player, fromHandDraw);
+		_lastPreventedDraw = allowed ? null : (player, fromHandDraw, HextechDrawRequest.GetRequestedCount(player));
 		return allowed;
 	}
 
-	public override Task AfterPreventingDraw()
+	// 被拦下的抽牌按效果顺序交给第一个认领它的效果（我细看在转出胜利之前：被我细看作废的抽牌不再推迟到下回合）。
+	public override async Task AfterPreventingDraw()
 	{
-		if (_lastPreventedDraw is not (Player player, bool fromHandDraw))
+		if (_lastPreventedDraw is not (Player player, bool fromHandDraw, int requestedCount))
 		{
-			return Task.CompletedTask;
+			return;
 		}
 
 		_lastPreventedDraw = null;
 		HextechEnemyHexContext context = new(this);
-		foreach (HextechEnemyHexEffect effect in HextechEnemyHexEffects.GetActive(this))
+		foreach (HextechEnemyHexEffect effect in HextechEnemyHexEffects.GetActive(this).ToList())
 		{
-			effect.AfterPreventingDraw(context, player, fromHandDraw);
+			if (await effect.AfterPreventingDraw(context, player, fromHandDraw, requestedCount))
+			{
+				return;
+			}
+		}
+	}
+
+	public override decimal ModifyEnergyGain(Player player, decimal amount)
+	{
+		if (player.Creature.CombatState?.RunState != RunState)
+		{
+			return amount;
 		}
 
-		return Task.CompletedTask;
+		return HextechEnemyHexDispatcher.Transform(
+			this,
+			amount,
+			(effect, context, current) => effect.ModifyEnergyGain(context, player, current));
+	}
+
+	public override async Task AfterModifyingEnergyGain()
+	{
+		await HextechEnemyHexDispatcher.ForEachActive(
+			this,
+			(effect, context) => effect.AfterModifyingEnergyGain(context));
 	}
 
 	// 能否打出只管本局战斗中玩家侧的牌。

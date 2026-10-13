@@ -16,6 +16,8 @@ HextechRunes.HextechCombatVfx._glowTexture : Texture2D
 HextechRunes.HextechCombatVfx._ringTexture : Texture2D
 HextechRunes.HextechContentRegistry._lookups : RegistryLookups
 HextechRunes.HextechContentRegistry._lookupsVersion : Int32
+HextechRunes.HextechDrawRequest._count : Int32
+HextechRunes.HextechDrawRequest._player : Player
 HextechRunes.HextechEndlessModeCompatibilityHooks._endlessMultiplierMethod : MethodInfo
 HextechRunes.HextechEndlessModeCompatibilityHooks._loggedMissingEndlessApi : Boolean
 HextechRunes.HextechEndlessModeCompatibilityHooks._loggedNormalizationFailure : Boolean

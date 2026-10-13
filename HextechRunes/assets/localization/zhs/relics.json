@@ -1548,5 +1548,15 @@
   "TRANSMUTE_GOLD_HEX.description": "敌人获得[blue]2[/blue]个随机黄金阶海克斯符文。",
   "TRANSMUTE_GOLD_HEX.flavor": "棱彩碎成两半，每一半都还是金的。",
   "transmuteGoldHex.enemyDescription": "敌人获得[blue]2[/blue]个随机黄金阶海克斯符文。",
+  "BLOODTHIRST_RUNE.title": "渴血",
+  "BLOODTHIRST_RUNE.description": "当你造成未被格挡的伤害时，回复相当于该伤害[blue]{HealPercent}%[/blue]的生命。",
+  "BLOODTHIRST_RUNE.flavor": "尝到第一口，就停不下来了。",
+  "PURIST_RUNE.title": "纯粹主义者",
+  "PURIST_RUNE.description": "你在回合内抽牌时，改为获得等量的能量。",
+  "PURIST_RUNE.flavor": "手里的牌越少，心里的路越直。",
+  "SPIN_TO_WIN_HEX.title": "转出胜利",
+  "SPIN_TO_WIN_HEX.description": "玩家在回合内的抽牌和获得的能量改为在下回合生效。",
+  "SPIN_TO_WIN_HEX.flavor": "转得越快，离胜利越远。",
+  "spinToWinHex.enemyDescription": "玩家在回合内的抽牌和获得的能量改为在下回合生效。",
   "badTasteRune.enemyDescription": "每当敌人受到负面效果时，回复[blue]1%[/blue]的最大生命值。"
 }

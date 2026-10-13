@@ -1548,5 +1548,15 @@
   "TRANSMUTE_GOLD_HEX.description": "Los enemigos obtienen [blue]2[/blue] runas Hextech de Oro aleatorias.",
   "TRANSMUTE_GOLD_HEX.flavor": "Parte un prisma por la mitad y ambas mitades seguirán siendo de oro.",
   "transmuteGoldHex.enemyDescription": "Los enemigos obtienen [blue]2[/blue] runas Hextech de Oro aleatorias.",
+  "BLOODTHIRST_RUNE.title": "Sed de sangre",
+  "BLOODTHIRST_RUNE.description": "Cuando infliges daño no bloqueado, te curas un [blue]{HealPercent}%[/blue] de ese daño.",
+  "BLOODTHIRST_RUNE.flavor": "Un solo trago nunca es suficiente.",
+  "PURIST_RUNE.title": "Purista",
+  "PURIST_RUNE.description": "Durante tu turno, cuando fueras a robar cartas, ganas esa misma cantidad de Energía en su lugar.",
+  "PURIST_RUNE.flavor": "Menos cartas, camino más claro.",
+  "SPIN_TO_WIN_HEX.title": "Girar para ganar",
+  "SPIN_TO_WIN_HEX.description": "El robo de cartas y la Energía que los jugadores obtienen durante su turno se activan en el siguiente turno.",
+  "SPIN_TO_WIN_HEX.flavor": "Cuanto más rápido gira, más se aleja la victoria.",
+  "spinToWinHex.enemyDescription": "El robo de cartas y la Energía que los jugadores obtienen durante su turno se activan en el siguiente turno.",
   "badTasteRune.enemyDescription": "Cada vez que un enemigo recibe un efecto negativo, recupera [blue]1%[/blue] de sus PV máximos."
 }

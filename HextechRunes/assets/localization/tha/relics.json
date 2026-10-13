@@ -1548,5 +1548,15 @@
   "TRANSMUTE_GOLD_HEX.description": "ศัตรูได้รับรูนเฮกซ์เทคโกลด์แบบสุ่ม [blue]2[/blue] อัน",
   "TRANSMUTE_GOLD_HEX.flavor": "ผ่าปริซึมออกเป็นสองซีก ทั้งสองซีกก็ยังเป็นทอง",
   "transmuteGoldHex.enemyDescription": "ศัตรูได้รับรูนเฮกซ์เทคโกลด์แบบสุ่ม [blue]2[/blue] อัน",
+  "BLOODTHIRST_RUNE.title": "กระหายเลือด",
+  "BLOODTHIRST_RUNE.description": "เมื่อคุณสร้างความเสียหายที่ไม่ถูกบล็อก จะฟื้นฟูพลังชีวิตเท่ากับ [blue]{HealPercent}%[/blue] ของความเสียหายนั้น",
+  "BLOODTHIRST_RUNE.flavor": "ได้ลิ้มรสครั้งเดียว ก็หยุดไม่ได้แล้ว",
+  "PURIST_RUNE.title": "ผู้ยึดมั่นความบริสุทธิ์",
+  "PURIST_RUNE.description": "ระหว่างเทิร์นของคุณ เมื่อคุณจะจั่วการ์ด ให้ได้รับพลังงานเท่ากับจำนวนนั้นแทน",
+  "PURIST_RUNE.flavor": "การ์ดในมือยิ่งน้อย ทางก็ยิ่งตรง",
+  "SPIN_TO_WIN_HEX.title": "หมุนสู่ชัยชนะ",
+  "SPIN_TO_WIN_HEX.description": "การจั่วการ์ดและพลังงานที่ผู้เล่นได้รับระหว่างเทิร์นของตน จะมีผลในเทิร์นถัดไปแทน",
+  "SPIN_TO_WIN_HEX.flavor": "ยิ่งหมุนเร็ว ชัยชนะยิ่งห่างไกล",
+  "spinToWinHex.enemyDescription": "การจั่วการ์ดและพลังงานที่ผู้เล่นได้รับระหว่างเทิร์นของตน จะมีผลในเทิร์นถัดไปแทน",
   "badTasteRune.enemyDescription": "เมื่อศัตรูได้รับดีบัฟ จะฟื้นฟู [blue]1%[/blue] ของ HP สูงสุด"
 }

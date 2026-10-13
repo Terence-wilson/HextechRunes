@@ -15,7 +15,7 @@
   "INFERNAL_DRAGON_SOUL_CARD.description": "การ์ดโจมตีใบแรกที่คุณเล่นในแต่ละเทิร์นจะสร้าง [blue]{BurnPower}[/blue] [gold]เผาไหม้[/gold] ใส่ศัตรู",
   "INFERNAL_DRAGON_SOUL_CARD.flavor": "การจู่โจมครั้งแรกจุดไฟทั้งสมรภูมิ",
   "HEXTECH_DRAGON_SOUL_CARD.title": "วิญญาณมังกรเฮกซ์เทค",
-  "HEXTECH_DRAGON_SOUL_CARD.description": "ได้รับพลังงานเพิ่ม [blue]{Energy}[/blue] ทุกเทิร์น",
+  "HEXTECH_DRAGON_SOUL_CARD.description": "ได้รับ {Energy:energyIcons()} เพิ่มทุกเทิร์น",
   "HEXTECH_DRAGON_SOUL_CARD.flavor": "สายฟ้าในขดลวดไม่เคยหลับใหล",
   "MOUNTAIN_DRAGON_SOUL_CARD.title": "วิญญาณมังกรภูผา",
   "MOUNTAIN_DRAGON_SOUL_CARD.description": "ตอนเริ่มต้นเทิร์น ได้รับ [blue]{PlatingPower}[/blue] [gold]เกราะโลหะ[/gold]",

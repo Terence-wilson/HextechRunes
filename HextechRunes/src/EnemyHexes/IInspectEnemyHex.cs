@@ -11,13 +11,16 @@ internal sealed class IInspectEnemyHex : HextechEnemyHexEffect
 			|| !ShouldPreventExtraDraw(context.Tracking, player.NetId, Limit(context), fromHandDraw);
 	}
 
-	internal override void AfterPreventingDraw(HextechEnemyHexContext context, Player player, bool fromHandDraw)
+	internal override Task<bool> AfterPreventingDraw(HextechEnemyHexContext context, Player player, bool fromHandDraw, int requestedCount)
 	{
-		if (IsActiveFor(context, player)
-			&& ShouldPreventExtraDraw(context.Tracking, player.NetId, Limit(context), fromHandDraw))
+		if (!IsActiveFor(context, player)
+			|| !ShouldPreventExtraDraw(context.Tracking, player.NetId, Limit(context), fromHandDraw))
 		{
-			RecordPreventedExtraDraw(context.Tracking, player.NetId);
+			return Task.FromResult(false);
 		}
+
+		RecordPreventedExtraDraw(context.Tracking, player.NetId);
+		return Task.FromResult(true);
 	}
 
 	internal static bool ShouldPreventExtraDraw(
