@@ -29,7 +29,7 @@ internal static partial class HextechRuneConfiguration
 		new(22, [], [ typeof(GetExcitedRune) ]),
 		// 0.8.5 遥测(69.8万局)选取率垫底批次转为默认禁用:豪猪7.7%/巨像的勇气10.6%/瓦库11.4%/
 		// 死亡收割11.5%/最终形态12.8%(全体中位数30.3%)。
-		new(23, [], [ typeof(ShoulderVakuRune), typeof(PorcupineRune), typeof(CourageOfColossusRune), typeof(DeathHarvestRune), typeof(FinalFormRune) ]),
+		new(23, [], [ typeof(PorcupineRune), typeof(CourageOfColossusRune), typeof(DeathHarvestRune), typeof(FinalFormRune) ]),
 		// 升级:打击/防御重做为"最高+999且战后升级本场打出过的"(棱彩),转为默认启用。
 		new(24, [ typeof(StrikeUpgradeRune), typeof(DefendUpgradeRune) ], []),
 		// 安东尼的偏见转为默认启用(0.8.6)。
@@ -45,7 +45,7 @@ internal static partial class HextechRuneConfiguration
 		new(37, [], [ typeof(SomethingForNothingRune), typeof(SoulCallingRune) ]),
 		new(39, [], [ typeof(GhostFormRune), typeof(DieForYouRune) ]),
 		new(40, [], [ typeof(SearingAttackRune), typeof(ScapegoatRune), typeof(TwilightVeilRune) ]),
-		// 大地苏醒重做为"每抽 8 张牌获得 5 层滚石"并合并到同一块滚石上，转为默认启用。
+		// 大地苏醒重做为"每抽 8 张牌新增一块 5 层滚石"，转为默认启用。
 		new(41, [ typeof(EarthAwakensRune) ], []),
 		// 启动流程敌我双方转为默认禁用。
 		new(42, [], [ typeof(StartupRoutineRune) ])
@@ -56,8 +56,6 @@ internal static partial class HextechRuneConfiguration
 	[
 		// 我方已在 v22 默认禁用。
 		(36, MonsterHexKind.GetExcited),
-		// 我方"你肩上的瓦库"早已默认禁用。
-		(38, MonsterHexKind.ShoulderVaku),
 		// 我方同在 v42 默认禁用。
 		(42, MonsterHexKind.StartupRoutine)
 	];

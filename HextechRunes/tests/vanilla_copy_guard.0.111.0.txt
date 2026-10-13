@@ -131,3 +131,4 @@ MegaCrit.Sts2.Core.Models.OrbModel::TriggerPassive(MegaCrit.Sts2.Core.GameAction
 MegaCrit.Sts2.Core.Models.OrbModel+<TriggerPassive>d__74::MoveNext()=7793a1f6376ca8e9345faeae17ec95861a73d02e
 MegaCrit.Sts2.Core.Models.Powers.RollingBoulderPower+<AfterPlayerTurnStart>d__8::MoveNext()=77e815c93bd8846d60ea1d8f6ff3fcf97b45ff3a
 MegaCrit.Sts2.Core.Nodes.Screens.InspectScreens.NInspectRelicScreen::UpdateRelicDisplay()=6ef3e9b75382a4d2c420ac235add058190f93d4d
+MegaCrit.Sts2.Core.Nodes.Rooms.NMapRoom::ReopenMap()=25f88e25c0a2cb437ee72c6a879c70b57b920cd7

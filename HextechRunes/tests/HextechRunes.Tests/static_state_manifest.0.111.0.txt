@@ -54,6 +54,8 @@ HextechRunes.HextechSavedPropertyBootstrap._officialCacheAudited : Boolean
 HextechRunes.HextechSelectionProgress.Changed : Action
 HextechRunes.HextechStarterUpgradeHooks._stepDownDepth : Int32
 HextechRunes.HextechTextures._missingTexture : Texture2D
+HextechRunes.HextechTransmuteNotice._layer : CanvasLayer
+HextechRunes.HextechTransmuteNotice._lines : VBoxContainer
 HextechRunes.HextechUiPreferences._config : ModUiConfig
 HextechRunes.HextechUpdateChecker._cachedResult : UpdateCheckResult
 HextechRunes.HextechUpdateChecker._checkTask : Task`1

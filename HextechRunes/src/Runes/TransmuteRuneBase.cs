@@ -1,3 +1,5 @@
+using MegaCrit.Sts2.Core.Context;
+
 namespace HextechRunes;
 
 /// <summary>
@@ -14,6 +16,11 @@ public abstract class TransmuteRuneBase : HextechRelicBase
 	public override async Task AfterObtained()
 	{
 		Flash();
-		await HextechRuneGrantHelper.ConsumeAndObtainRandomRunes(this, Owner, CandidateTypes, ObtainCount);
+		await HextechRuneGrantHelper.ConsumeAndObtainRandomRunes(
+			this,
+			Owner,
+			CandidateTypes,
+			ObtainCount,
+			LocalContext.IsMe(Owner) ? obtainedIds => HextechTransmuteNotice.ShowPlayer(this, obtainedIds) : null);
 	}
 }

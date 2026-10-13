@@ -168,7 +168,6 @@
 我方	ForgottenSoulRune	遗忘之魂	标签=综合
 我方	UpgradeRune	神化	标签=综合
 我方	OmniDragonSoulRune	全能龙魂	标签=综合
-#我方	ShoulderVakuRune	你肩上的瓦库	标签=综合
 #我方	CardInspectionRune	验牌	标签=过牌
 #我方	PrimitiveMadnessRune	疯狂原始人	标签=综合
 我方	QuantumComputingRune	量子计算	标签=综合

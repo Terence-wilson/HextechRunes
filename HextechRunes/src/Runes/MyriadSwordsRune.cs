@@ -60,7 +60,6 @@ public sealed class MyriadSwordsRune : HextechRelicBase
 				}
 
 				// 单体取按 CombatId 排序的首个可命中敌人(两端确定),全体(寻锋刃)传 null。
-				// 瓦库代打(VakuuTurnController)直接取 HittableEnemies 的第一个,不排序,两者不完全同口径。
 				Creature? target = blade.TargetType == TargetType.AnyEnemy
 					? HextechRuneTargeting.FirstHittableEnemy(Owner.Creature.CombatState)
 					: null;

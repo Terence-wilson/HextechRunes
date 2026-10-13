@@ -9,7 +9,7 @@ public enum HextechRarityTier
 
 internal enum MonsterHexKind
 {
-	// 已移除的数值 18/33/47/64/71/72/82/92/96 保持空洞，勿复用。
+	// 已移除的数值 18/33/47/64/65/71/72/82/92/96 保持空洞，勿复用。
 	Slap = 0,
 	EscapePlan = 1,
 	HeavyHitter = 2,
@@ -71,7 +71,6 @@ internal enum MonsterHexKind
 	JinlianBox = 61,
 	MirrorReflection = 62,
 	DuffsVintage = 63,
-	ShoulderVaku = 65,
 	Upgrade = 66,
 	NearDeathFeast = 67,
 	BlueCandleMedkit = 68,
@@ -155,5 +154,7 @@ internal enum MonsterHexKind
 	MoreTheMerrier = 144,     // 多多益善（黄金）
 	Enlightenment = 145,       // 开悟（棱彩）
 	CorruptHeart = 146,       // 升级：腐化之心（棱彩）
-	BadTaste = 147            // 恶趣味（白银）
+	BadTaste = 147,           // 恶趣味（白银）
+	TransmuteSilver = 148,    // 质变：白银阶（黄金）
+	TransmuteGold = 149       // 质变：黄金阶（棱彩）
 }

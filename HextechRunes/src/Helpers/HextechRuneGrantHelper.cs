@@ -35,15 +35,17 @@ internal static class HextechRuneGrantHelper
 		IEnumerable<Type> candidateTypes,
 		int count,
 		IReadOnlySet<ModelId>? blockedIds,
-		string operationContext)
+		string operationContext,
+		Action<IReadOnlyList<ModelId>>? beforeObtain = null)
 	{
 		IReadOnlyList<Type> candidates = candidateTypes as IReadOnlyList<Type> ?? candidateTypes.ToArray();
-		if (await TryObtainRandomRunesMultiplayer(player, candidates, count, blockedIds, operationContext))
+		if (await TryObtainRandomRunesMultiplayer(player, candidates, count, blockedIds, operationContext, beforeObtain))
 		{
 			return;
 		}
 
 		List<ModelId> selectedIds = SelectRandomRuneIds(player, candidates, count, blockedIds);
+		beforeObtain?.Invoke(selectedIds);
 		await ObtainRuneIds(player, selectedIds);
 	}
 
@@ -52,7 +54,8 @@ internal static class HextechRuneGrantHelper
 		IReadOnlyList<Type> candidateTypes,
 		int count,
 		IReadOnlySet<ModelId>? blockedIds,
-		string operationContext)
+		string operationContext,
+		Action<IReadOnlyList<ModelId>>? beforeObtain)
 	{
 		RunManager runManager = RunManager.Instance;
 		NetGameType gameType = runManager.NetService.Type;
@@ -83,6 +86,7 @@ internal static class HextechRuneGrantHelper
 					$"random-rune-grant {operationContext}");
 
 				HextechLog.Info("Mayhem", $"RandomRuneGrant sync local: player={player.NetId} choiceId={sentChoiceId} context={operationContext} ids={string.Join(",", selectedIds.Select(static id => id.Entry))}");
+				beforeObtain?.Invoke(selectedIds);
 				await ObtainRuneIds(player, selectedIds);
 				return true;
 			}
@@ -120,6 +124,7 @@ internal static class HextechRuneGrantHelper
 		HextechLog.Info("Mayhem", $"RandomRuneGrant remote received: player={player.NetId} choiceId={receivedChoiceId} context={operationContext} ids={string.Join(",", syncedIds.Select(static id => id.Entry))}");
 		try
 		{
+			beforeObtain?.Invoke(syncedIds);
 			await ObtainRuneIds(player, syncedIds);
 			return true;
 		}
@@ -228,7 +233,13 @@ internal static class HextechRuneGrantHelper
 		await ObtainRandomRunes(player, candidateTypes, ownedRunes.Count, blockedIds, operationContext);
 	}
 
-	public static async Task ConsumeAndObtainRandomRunes(RelicModel consumedRune, Player player, IEnumerable<Type> candidateTypes, int count)
+	/// <param name="beforeObtain">抽定后、逐个获得前回调（各端拿到的是同一组 id），用于质变提示等本地表现。</param>
+	public static async Task ConsumeAndObtainRandomRunes(
+		RelicModel consumedRune,
+		Player player,
+		IEnumerable<Type> candidateTypes,
+		int count,
+		Action<IReadOnlyList<ModelId>>? beforeObtain = null)
 	{
 		ModelId consumedRuneId = consumedRune.CanonicalId();
 		await RelicCmd.Remove(consumedRune);
@@ -236,7 +247,9 @@ internal static class HextechRuneGrantHelper
 			player,
 			candidateTypes,
 			count,
-			$"consume:{consumedRuneId.Category}:{consumedRuneId.Entry}");
+			blockedIds: null,
+			$"consume:{consumedRuneId.Category}:{consumedRuneId.Entry}",
+			beforeObtain);
 	}
 
 	/// <summary>
