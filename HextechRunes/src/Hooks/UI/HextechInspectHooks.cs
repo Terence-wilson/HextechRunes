@@ -227,7 +227,8 @@ internal static class HextechInspectHooks
 	/// 三个分支设置的字段都会被覆盖。激活条件:当前索引的遗物属于海克斯(<see cref="HextechCatalog.IsHextechCustomRelic"/>)。
 	/// </remarks>
 	[HarmonyPatch(typeof(NInspectRelicScreen), "UpdateRelicDisplay")]
-	[HextechPatch("ui.inspect.update-display", "遗物检视界面", Optional = true)]
+	// 后缀逐项复制原版"正常"分支，目标 IL 仍由原版拷贝守卫冻结。
+	[HextechPatch("ui.inspect.update-display", "遗物检视界面", Optional = true, CopiesVanillaLogic = true)]
 	private static class UpdateRelicDisplayPatch
 	{
 		[HarmonyPrepare]
