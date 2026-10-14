@@ -79,6 +79,47 @@ function getLabel(category, id) {
   return LABELS?.[category]?.[id] || id;
 }
 
+// labels.json 的 runes / monsterHexes 即官方内容清单（本体 + 拓展包，含已退役条目）。
+// 其他模组通过对接接口注册的海克斯也会以模型 ID 上报，它们不在清单里。
+function isOfficialContent(category, id) {
+  return Boolean(id && LABELS?.[category]?.[id]);
+}
+
+function parseOfficialOnly(value) {
+  return value === "1" || value === "true";
+}
+
+// 敌方海克斯是本体枚举，其他模组无法添加（旧客户端偶尔把不认识的编号报成数字），所以只过滤我方海克斯表。
+const CONTENT_TABLES = [
+  ["playerRuneRuns", "runes", true],
+  ["playerRuneChoices", "runes", true],
+  ["monsterHexRuns", "monsterHexes", false]
+];
+
+// 派生快照里的中文名是生成时写入的；展示时按当前 labels 重新标注，新增内容的中文名在服务重启后立即生效。
+// officialOnly 时去掉不在官方清单里的我方海克斯条目（只影响海克斯表，局数与胜率口径不变）。
+function prepareSummaryForDisplay(summary, officialOnly) {
+  const tables = { ...summary.tables };
+  let hiddenUnofficialEntries = 0;
+  for (const [tableName, category, filterable] of CONTENT_TABLES) {
+    const rows = Array.isArray(tables[tableName]) ? tables[tableName] : [];
+    const relabeled = rows.map((row) => ({
+      ...row,
+      name: getLabel(category, row.id),
+      official: !filterable || isOfficialContent(category, row.id)
+    }));
+    const visible = officialOnly ? relabeled.filter((row) => row.official) : relabeled;
+    hiddenUnofficialEntries += relabeled.length - visible.length;
+    tables[tableName] = visible;
+  }
+  return {
+    ...summary,
+    filters: { ...summary.filters, officialOnly },
+    hiddenUnofficialEntries,
+    tables
+  };
+}
+
 function displayLabel(row) {
   if (!row || !row.name || row.name === row.id) {
     return row?.id || "";
@@ -1234,7 +1275,17 @@ function getDefaultDisplayVersion() {
 
 function buildFilterNote(summary) {
   const versionText = summary.versionFilter === "all" ? "全部版本" : `版本 ${summary.versionFilter}`;
-  return `当前统计口径：${versionText}，排除 runTime < ${summary.filters.minRunTimeForDefaultStats} 秒的历史局；0.5.0 起客户端会直接跳过短局上传。`;
+  const contentText = summary.filters.officialOnly
+    ? `仅官方海克斯（已隐藏 ${summary.hiddenUnofficialEntries || 0} 个其他模组添加的条目）`
+    : "包含其他模组添加的海克斯";
+  return `当前统计口径：${versionText}，${contentText}，排除 runTime < ${summary.filters.minRunTimeForDefaultStats} 秒的历史局；0.5.0 起客户端会直接跳过短局上传。`;
+}
+
+function renderContentFilterOptions(officialOnly) {
+  return [
+    `<option value="all"${officialOnly ? "" : " selected"}>全部海克斯</option>`,
+    `<option value="official"${officialOnly ? " selected" : ""}>仅官方海克斯</option>`
+  ].join("");
 }
 
 function renderTable(headers, rows) {
@@ -1266,8 +1317,8 @@ function renderVersionOptions(summary, selectedVersion, latestVersion) {
   return options.join("");
 }
 
-function renderIndexHtml(versionFilter = null) {
-  const summary = getSummaryForDisplay(versionFilter);
+function renderIndexHtml(versionFilter = null, officialOnly = false) {
+  const summary = prepareSummaryForDisplay(getSummaryForDisplay(versionFilter), officialOnly);
   const latestVersion = normalizeVersionFilter(readLatestVersionInfo()?.latestVersion);
   const indexPath = path.join(PUBLIC_DIR, "index.html");
   let html = fs.readFileSync(indexPath, "utf8");
@@ -1280,6 +1331,7 @@ function renderIndexHtml(versionFilter = null) {
       `<div class="muted" id="updated" data-generated-at-utc="${escapeHtml(generatedAtUtc)}">${escapeHtml(updatedText)}</div>`
     ],
     [/<select id="versionFilter">\s*<option value="all">全部版本<\/option>\s*<\/select>/, `<select id="versionFilter">${renderVersionOptions(summary, summary.versionFilter, latestVersion)}</select>`],
+    [/<select id="contentFilter">[\s\S]*?<\/select>/, `<select id="contentFilter">${renderContentFilterOptions(officialOnly)}</select>`],
     [/<b id="eligibleRuns">0<\/b>/, `<b id="eligibleRuns">${summary.runCount}</b>`],
     [/<b id="rawRuns">0<\/b>/, `<b id="rawRuns">${summary.raw.uniqueRuns}</b>`],
     [/<b id="shortRuns">0<\/b>/, `<b id="shortRuns">${summary.excludedShortRuns}</b>`],
@@ -1311,7 +1363,7 @@ function serveStatic(req, res) {
     const versionFilter = url.searchParams.has("version")
       ? normalizeVersionFilter(url.searchParams.get("version"))
       : getDefaultDisplayVersion();
-    return sendHtml(res, 200, renderIndexHtml(versionFilter));
+    return sendHtml(res, 200, renderIndexHtml(versionFilter, parseOfficialOnly(url.searchParams.get("official"))));
   }
 
   const filePath = path.normalize(path.join(PUBLIC_DIR, pathname));
@@ -1352,7 +1404,9 @@ const server = http.createServer(async (req, res) => {
     });
   }
   if (req.method === "GET" && url.pathname === "/api/hextech-runes/summary") {
-    return sendJson(res, 200, getSummaryForDisplay(url.searchParams.get("version")));
+    return sendJson(res, 200, prepareSummaryForDisplay(
+      getSummaryForDisplay(url.searchParams.get("version")),
+      parseOfficialOnly(url.searchParams.get("official"))));
   }
   if (req.method === "GET" && url.pathname === "/api/hextech-runes/latest-version") {
     const latestVersionInfo = readLatestVersionInfo();

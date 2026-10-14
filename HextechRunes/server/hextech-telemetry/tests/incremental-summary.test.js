@@ -312,3 +312,41 @@ test("滚动在改名后、summary 落盘前中断时，启动先补完旧段再
     fs.rmSync(dataDir, { recursive: true, force: true });
   }
 });
+
+test("仅官方海克斯过滤：隐藏不在 labels.json 里的条目，并按当前 labels 标注中文名", async () => {
+  const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), "hextech-telemetry-official-"));
+  const port = 32000 + Math.floor(Math.random() * 10000);
+  const server = await startServer(dataDir, port);
+  try {
+    const payload = makePayload("run-official-filter-0001");
+    payload.players[0].hextechRunes = ["BLOODTHIRST_RUNE", "OTHER_MOD_RUNE"];
+    payload.runeChoices[0].options = ["BLOODTHIRST_RUNE", "OTHER_MOD_RUNE"];
+    payload.runeChoices[0].selected = "OTHER_MOD_RUNE";
+    payload.monsterHexes[0].hex = "SpinToWin";
+    await postRun(port, payload);
+    await new Promise((resolve) => setTimeout(resolve, 1200));
+
+    const base = `http://127.0.0.1:${port}/api/hextech-runes/summary`;
+    const all = await fetch(base).then((response) => response.json());
+    assert.equal(all.filters.officialOnly, false);
+    assert.deepEqual(all.tables.playerRuneChoices.map((row) => row.id).sort(), ["BLOODTHIRST_RUNE", "OTHER_MOD_RUNE"]);
+    assert.equal(all.tables.playerRuneChoices.find((row) => row.id === "BLOODTHIRST_RUNE").name, "渴血");
+    assert.equal(all.tables.playerRuneChoices.find((row) => row.id === "OTHER_MOD_RUNE").official, false);
+    assert.equal(all.tables.monsterHexRuns[0].name, "转出胜利");
+
+    const official = await fetch(`${base}?official=1`).then((response) => response.json());
+    assert.equal(official.filters.officialOnly, true);
+    assert.deepEqual(official.tables.playerRuneChoices.map((row) => row.id), ["BLOODTHIRST_RUNE"]);
+    assert.deepEqual(official.tables.playerRuneRuns.map((row) => row.id), ["BLOODTHIRST_RUNE"]);
+    assert.equal(official.hiddenUnofficialEntries, 2);
+    assert.equal(official.runCount, all.runCount, "run totals are unaffected by the entry filter");
+
+    const html = await fetch(`http://127.0.0.1:${port}/?version=all&official=1`).then((response) => response.text());
+    assert.match(html, /<option value="official" selected>仅官方海克斯<\/option>/);
+    assert.match(html, /已隐藏 2 个其他模组添加的条目/);
+    assert.doesNotMatch(html, /OTHER_MOD_RUNE/);
+  } finally {
+    await stopServer(server);
+    fs.rmSync(dataDir, { recursive: true, force: true });
+  }
+});

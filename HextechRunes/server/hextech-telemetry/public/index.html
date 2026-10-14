@@ -343,6 +343,11 @@
         <select id="versionFilter">
           <option value="all">全部版本</option>
         </select>
+        <label for="contentFilter">海克斯范围</label>
+        <select id="contentFilter">
+          <option value="all">全部海克斯</option>
+          <option value="official">仅官方海克斯</option>
+        </select>
         <button id="applyVersion" type="button">应用选择</button>
       </div>
     </div>
@@ -612,10 +617,17 @@
       fill("lowWin", [...eligible].sort((a, b) => (a.selectedWinRate || 0) - (b.selectedWinRate || 0)).slice(0, 5), (r) => r.selectedWinRate);
     }
 
-    function summaryUrl(version) {
-      return version && version !== "all"
-        ? apiPath(`/api/hextech-runes/summary?version=${encodeURIComponent(version)}`)
-        : apiPath("/api/hextech-runes/summary");
+    // 仅官方：隐藏其他模组通过对接接口注册、不在官方清单里的海克斯条目（服务端按 labels.json 判定）。
+    function isOfficialOnly() {
+      return document.getElementById("contentFilter").value === "official";
+    }
+
+    function summaryUrl(version, officialOnly = isOfficialOnly()) {
+      const params = new URLSearchParams();
+      if (version && version !== "all") params.set("version", version);
+      if (officialOnly) params.set("official", "1");
+      const query = params.toString();
+      return apiPath(`/api/hextech-runes/summary${query ? `?${query}` : ""}`);
     }
 
     function getQueryVersion() {
@@ -626,13 +638,28 @@
     function setQueryVersion(version) {
       const url = new URL(window.location.href);
       url.searchParams.set("version", version && version !== "all" ? version : "all");
+      if (isOfficialOnly()) {
+        url.searchParams.set("official", "1");
+      } else {
+        url.searchParams.delete("official");
+      }
       window.history.replaceState(null, "", url);
+    }
+
+    function applyQueryContentFilter() {
+      const value = new URLSearchParams(window.location.search).get("official");
+      if (value === "1" || value === "true") {
+        document.getElementById("contentFilter").value = "official";
+      }
     }
 
     function buildFilterNote(summary) {
       const version = summary.versionFilter || (summary.filters && summary.filters.version) || "all";
       const versionText = version === "all" ? "全部版本" : `版本 ${version}`;
-      return `当前统计口径：${versionText}，排除 runTime < ${summary.filters.minRunTimeForDefaultStats} 秒的历史局；0.5.0 起客户端会直接跳过短局上传。`;
+      const contentText = summary.filters && summary.filters.officialOnly
+        ? `仅官方海克斯（已隐藏 ${summary.hiddenUnofficialEntries || 0} 个其他模组添加的条目）`
+        : "包含其他模组添加的海克斯";
+      return `当前统计口径：${versionText}，${contentText}，排除 runTime < ${summary.filters.minRunTimeForDefaultStats} 秒的历史局；0.5.0 起客户端会直接跳过短局上传。`;
     }
 
     function formatLocalDateTime(value) {
@@ -763,6 +790,9 @@
       document.getElementById("applyVersion").addEventListener("click", () => {
         renderSelectedVersion(document.getElementById("versionFilter").value);
       });
+      document.getElementById("contentFilter").addEventListener("change", () => {
+        renderSelectedVersion(document.getElementById("versionFilter").value);
+      });
     }
 
     function setApplyButtonBusy(isBusy) {
@@ -787,6 +817,7 @@
 
     async function init() {
       localizePreRenderedTimestamp();
+      applyQueryContentFilter();
       bindVersionFilter();
       try {
         const [latestInfo, allSummary] = await Promise.all([
