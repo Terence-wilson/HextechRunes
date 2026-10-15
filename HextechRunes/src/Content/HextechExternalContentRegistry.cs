@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace HextechRunes;
 
 internal static class HextechExternalContentRegistry
@@ -8,15 +10,23 @@ internal static class HextechExternalContentRegistry
 	private static readonly List<PlayerRuneRegistration> PlayerRuneRegistrations = new();
 	private static readonly List<ForgeRegistration> ForgeRegistrations = new();
 	private static readonly List<Type> EventRelicTypes = new();
-	private static readonly Dictionary<ModelId, string> AssetModIdsByModelId = new();
-	private static readonly Dictionary<ModelId, string> EnchantmentIconPathsByModelId = new();
-	private static readonly Dictionary<ModelId, Func<Player, bool>> PlayerRuneAvailabilityByModelId = new();
-	// 符文 → 所属角色（CharacterModel 的 ModelId），给原版角色池以外的角色用；进角色加权计算，改动递增 _version。
-	private static readonly Dictionary<ModelId, ModelId> PlayerRuneCharacterIdsByModelId = new();
+	// 外部元数据一律按类型保存，查询时再取类型当前的 ModelId：RitsuLib 等前置会在登记类型之后才把条目改成带模组前缀的形式，
+	// 而外部模组常在登记内容之前就调用注册接口，注册时算出的 ModelId 可能和游戏最终使用的不一致（见 HextechModelDbState）。
+	private static readonly Dictionary<Type, string> AssetModIdsByType = new(ModelTypeComparer.Instance);
+	private static readonly Dictionary<Type, string> EnchantmentIconPathsByType = new(ModelTypeComparer.Instance);
+	private static readonly Dictionary<Type, Func<Player, bool>> PlayerRuneAvailabilityByType = new(ModelTypeComparer.Instance);
+	// 符文 → 所属角色（CharacterModel 类型），给原版角色池以外的角色用；进角色加权计算，改动递增 _version。
+	private static readonly Dictionary<Type, Type> PlayerRuneCharacterTypesByType = new(ModelTypeComparer.Instance);
 	// 以下两项只影响界面文字，不进候选池计算，改动不递增 _version。
-	private static readonly Dictionary<ModelId, string> PlayerRunePoolLabelKeysByModelId = new();
+	private static readonly Dictionary<Type, string> PlayerRunePoolLabelKeysByType = new(ModelTypeComparer.Instance);
 	private static readonly Dictionary<string, string> ConfigSectionTitleKeysByAssetModId = new(StringComparer.Ordinal);
 	private static int _version;
+	private static int _metadataRevision;
+	// 测试替身：模拟前置在注册之后才改写条目（测试进程里不能给 ModelDb.GetEntry 打补丁）。
+	internal static Func<Type, ModelId> ModelIdResolver = ModelDb.GetId;
+	private static Dictionary<ModelId, Type>? _typesByModelId;
+	private static int _typesByModelIdRevision = -1;
+	private static bool _typesByModelIdFinal;
 
 	internal static int Version
 	{
@@ -133,8 +143,8 @@ internal static class HextechExternalContentRegistry
 		lock (SyncRoot)
 		{
 			if (TryStoreFirstWriter(
-				EnchantmentIconPathsByModelId,
-				ModelDb.GetId(enchantmentType),
+				EnchantmentIconPathsByType,
+				enchantmentType,
 				iconPath,
 				"external-content.enchantment-icon-conflict",
 				(existingPath, incomingPath) => $"Conflicting duplicate enchantment icon registration for {enchantmentType.FullName}; first path retained: "
@@ -174,7 +184,7 @@ internal static class HextechExternalContentRegistry
 	{
 		lock (SyncRoot)
 		{
-			return AssetModIdsByModelId.TryGetValue(id, out string? modId)
+			return TryResolveType(id, out Type? type) && AssetModIdsByType.TryGetValue(type, out string? modId)
 				? modId
 				: null;
 		}
@@ -185,8 +195,8 @@ internal static class HextechExternalContentRegistry
 		lock (SyncRoot)
 		{
 			TryStoreFirstWriter(
-				PlayerRunePoolLabelKeysByModelId,
-				ModelDb.GetId(runeType),
+				PlayerRunePoolLabelKeysByType,
+				runeType,
 				poolKey,
 				"external-content.pool-label-conflict",
 				(existing, incoming) => DescribeStringConflict($"pool label for {runeType.FullName}", existing, incoming));
@@ -211,12 +221,13 @@ internal static class HextechExternalContentRegistry
 		lock (SyncRoot)
 		{
 			if (TryStoreFirstWriter(
-				PlayerRuneCharacterIdsByModelId,
-				ModelDb.GetId(runeType),
-				ModelDb.GetId(characterType),
+				PlayerRuneCharacterTypesByType,
+				runeType,
+				characterType,
 				"external-content.rune-character-conflict",
 				(existing, incoming) => $"Conflicting duplicate character for {runeType.FullName}; first character retained: "
-					+ $"existing={existing.Entry} incoming={incoming.Entry} callerAssembly={DescribeCallerAssembly(runeType)}"))
+					+ $"existing={existing.FullName} incoming={incoming.FullName} callerAssembly={DescribeCallerAssembly(runeType)}",
+				ModelTypeComparer.Instance))
 			{
 				_version++;
 			}
@@ -227,9 +238,10 @@ internal static class HextechExternalContentRegistry
 	{
 		lock (SyncRoot)
 		{
-			return PlayerRuneCharacterIdsByModelId.TryGetValue(runeId, out ModelId? characterId)
-				? characterId
-				: null;
+			return TryResolveType(runeId, out Type? runeType)
+				&& PlayerRuneCharacterTypesByType.TryGetValue(runeType, out Type? characterType)
+					? ModelIdResolver(characterType)
+					: null;
 		}
 	}
 
@@ -237,7 +249,7 @@ internal static class HextechExternalContentRegistry
 	{
 		lock (SyncRoot)
 		{
-			return PlayerRuneCharacterIdsByModelId.ContainsValue(characterId);
+			return PlayerRuneCharacterTypesByType.Values.Any(characterType => ModelIdResolver(characterType) == characterId);
 		}
 	}
 
@@ -245,7 +257,7 @@ internal static class HextechExternalContentRegistry
 	{
 		lock (SyncRoot)
 		{
-			return PlayerRunePoolLabelKeysByModelId.TryGetValue(id, out string? poolKey)
+			return TryResolveType(id, out Type? type) && PlayerRunePoolLabelKeysByType.TryGetValue(type, out string? poolKey)
 				? poolKey
 				: null;
 		}
@@ -265,7 +277,7 @@ internal static class HextechExternalContentRegistry
 	{
 		lock (SyncRoot)
 		{
-			return PlayerRuneAvailabilityByModelId.TryGetValue(id, out Func<Player, bool>? availability)
+			return TryResolveType(id, out Type? type) && PlayerRuneAvailabilityByType.TryGetValue(type, out Func<Player, bool>? availability)
 				? availability
 				: null;
 		}
@@ -275,7 +287,7 @@ internal static class HextechExternalContentRegistry
 	{
 		lock (SyncRoot)
 		{
-			return EnchantmentIconPathsByModelId.TryGetValue(id, out string? path)
+			return TryResolveType(id, out Type? type) && EnchantmentIconPathsByType.TryGetValue(type, out string? path)
 				? path
 				: null;
 		}
@@ -313,8 +325,8 @@ internal static class HextechExternalContentRegistry
 		}
 
 		return TryStoreFirstWriter(
-			AssetModIdsByModelId,
-			ModelDb.GetId(modelType),
+			AssetModIdsByType,
+			modelType,
 			assetModId,
 			"external-content.asset-owner-conflict",
 			(existing, incoming) => $"Conflicting asset owner registration for {modelType.FullName}; first owner retained: "
@@ -332,8 +344,8 @@ internal static class HextechExternalContentRegistry
 		}
 
 		return TryStoreFirstWriter(
-			PlayerRuneAvailabilityByModelId,
-			ModelDb.GetId(runeType),
+			PlayerRuneAvailabilityByType,
+			runeType,
 			availability,
 			"external-content.availability-conflict",
 			(_, _) => $"Conflicting duplicate availability predicate for {runeType.FullName}; first predicate retained: "
@@ -341,18 +353,19 @@ internal static class HextechExternalContentRegistry
 	}
 
 	// 首个写入者生效：同键再次登记不同的值只按预算告警、不覆盖，登记相同的值静默忽略。
-	// 字符串按 Ordinal 比较，委托按目标与方法比较（EqualityComparer.Default 与原先的 == / != 一致）。
+	// 字符串按 Ordinal 比较，委托按目标与方法比较（EqualityComparer.Default 与原先的 == / != 一致），类型值按模型类型身份比较。
 	private static bool TryStoreFirstWriter<TKey, TValue>(
 		Dictionary<TKey, TValue> store,
 		TKey key,
 		TValue value,
 		string logBudgetKey,
-		Func<TValue, TValue, string> describeConflict)
+		Func<TValue, TValue, string> describeConflict,
+		IEqualityComparer<TValue>? valueComparer = null)
 		where TKey : notnull
 	{
 		if (store.TryGetValue(key, out TValue? existing))
 		{
-			if (!EqualityComparer<TValue>.Default.Equals(existing, value)
+			if (!(valueComparer ?? EqualityComparer<TValue>.Default).Equals(existing, value)
 				&& HextechRunLogBudget.TryConsume(logBudgetKey, 12))
 			{
 				HextechLog.Warn("ExternalContent", describeConflict(existing, value));
@@ -362,7 +375,47 @@ internal static class HextechExternalContentRegistry
 		}
 
 		store.Add(key, value);
+		_metadataRevision++;
 		return true;
+	}
+
+	// 已登记元数据的类型 → 当前 ModelId。ModelDb 收录内容之前条目可能还会变，那时建的索引只用这一次；
+	// 收录之后索引固定，直到再有新的登记。调用方持有 SyncRoot。
+	private static bool TryResolveType(ModelId id, [NotNullWhen(true)] out Type? type)
+	{
+		if (_typesByModelId == null || _typesByModelIdRevision != _metadataRevision || !_typesByModelIdFinal)
+		{
+			_typesByModelIdFinal = HextechModelDbState.IsContentRegistered;
+			Dictionary<ModelId, Type> index = new();
+			foreach (Type modelType in AssetModIdsByType.Keys
+				.Concat(EnchantmentIconPathsByType.Keys)
+				.Concat(PlayerRuneAvailabilityByType.Keys)
+				.Concat(PlayerRuneCharacterTypesByType.Keys)
+				.Concat(PlayerRunePoolLabelKeysByType.Keys))
+			{
+				index.TryAdd(ModelIdResolver(modelType), modelType);
+			}
+
+			_typesByModelId = index;
+			_typesByModelIdRevision = _metadataRevision;
+		}
+
+		return _typesByModelId.TryGetValue(id, out type);
+	}
+
+	private sealed class ModelTypeComparer : IEqualityComparer<Type>
+	{
+		internal static readonly ModelTypeComparer Instance = new();
+
+		public bool Equals(Type? left, Type? right)
+		{
+			return left != null && right != null && HextechModelTypeIdentity.IsSame(left, right);
+		}
+
+		public int GetHashCode(Type type)
+		{
+			return StringComparer.Ordinal.GetHashCode(type.FullName ?? type.Name);
+		}
 	}
 
 	private static string DescribeStringConflict(string description, string existing, string incoming)
@@ -378,7 +431,7 @@ internal static class HextechExternalContentRegistry
 
 	private static string? GetStoredAssetModId(Type modelType)
 	{
-		return AssetModIdsByModelId.TryGetValue(ModelDb.GetId(modelType), out string? assetModId)
+		return AssetModIdsByType.TryGetValue(modelType, out string? assetModId)
 			? assetModId
 			: null;
 	}

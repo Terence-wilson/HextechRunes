@@ -57,8 +57,8 @@ internal static partial class Program
 		Action[] restore =
 		[
 			CaptureStaticCollectionRestore(typeof(HextechExternalContentRegistry), "PlayerRuneRegistrations"),
-			CaptureStaticCollectionRestore(typeof(HextechExternalContentRegistry), "AssetModIdsByModelId"),
-			CaptureStaticCollectionRestore(typeof(HextechExternalContentRegistry), "PlayerRuneAvailabilityByModelId"),
+			CaptureStaticCollectionRestore(typeof(HextechExternalContentRegistry), "AssetModIdsByType"),
+			CaptureStaticCollectionRestore(typeof(HextechExternalContentRegistry), "PlayerRuneAvailabilityByType"),
 			CaptureExternalRegistryVersionRestore(),
 			SuppressCompatibilityWarnings(
 				"external-content.non-starter-rune",
@@ -119,8 +119,8 @@ internal static partial class Program
 		Action[] restore =
 		[
 			CaptureStaticCollectionRestore(typeof(HextechExternalContentRegistry), "PlayerRuneRegistrations"),
-			CaptureStaticCollectionRestore(typeof(HextechExternalContentRegistry), "AssetModIdsByModelId"),
-			CaptureStaticCollectionRestore(typeof(HextechExternalContentRegistry), "PlayerRunePoolLabelKeysByModelId"),
+			CaptureStaticCollectionRestore(typeof(HextechExternalContentRegistry), "AssetModIdsByType"),
+			CaptureStaticCollectionRestore(typeof(HextechExternalContentRegistry), "PlayerRunePoolLabelKeysByType"),
 			CaptureStaticCollectionRestore(typeof(HextechExternalContentRegistry), "ConfigSectionTitleKeysByAssetModId"),
 			CaptureExternalRegistryVersionRestore(),
 			SuppressCompatibilityWarnings(

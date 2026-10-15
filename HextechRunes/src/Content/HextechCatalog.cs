@@ -107,10 +107,12 @@ internal static partial class HextechCatalog
 		int version = HextechContentRegistry.Version;
 		lock (ModelIdLookupLock)
 		{
-			if (_configurablePlayerRuneIds == null || _configurablePlayerRuneIdsVersion != version)
+			if (_configurablePlayerRuneIds == null || _configurablePlayerRuneIdsVersion != version || !_configurablePlayerRuneIdsFinal)
 			{
+				bool final = HextechModelDbState.IsContentRegistered;
 				_configurablePlayerRuneIds = BuildConfigurablePlayerRuneIds();
 				_configurablePlayerRuneIdsVersion = version;
+				_configurablePlayerRuneIdsFinal = final;
 			}
 
 			return _configurablePlayerRuneIds;
