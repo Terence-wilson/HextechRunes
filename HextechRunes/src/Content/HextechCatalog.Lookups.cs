@@ -7,8 +7,11 @@ internal static partial class HextechCatalog
 	private static readonly object ModelIdLookupLock = new();
 	private static ModelIdLookupCache? _modelIdLookupCache;
 	private static int _modelIdLookupCacheVersion = -1;
+	// 在 ModelDb 收录内容之前建的缓存可能含尚未定型的外部 ModelId（见 HextechModelDbState），下次访问重建。
+	private static bool _modelIdLookupCacheFinal;
 	private static IReadOnlySet<ModelId>? _configurablePlayerRuneIds;
 	private static int _configurablePlayerRuneIdsVersion = -1;
+	private static bool _configurablePlayerRuneIdsFinal;
 
 	public static bool IsHextechRelic(RelicModel? relic)
 	{
@@ -130,8 +133,9 @@ internal static partial class HextechCatalog
 			int version = HextechContentRegistry.Version;
 			lock (ModelIdLookupLock)
 			{
-				if (_modelIdLookupCache == null || _modelIdLookupCacheVersion != version)
+				if (_modelIdLookupCache == null || _modelIdLookupCacheVersion != version || !_modelIdLookupCacheFinal)
 				{
+					_modelIdLookupCacheFinal = HextechModelDbState.IsContentRegistered;
 					_modelIdLookupCache = BuildModelIdLookupCache();
 					_modelIdLookupCacheVersion = version;
 				}

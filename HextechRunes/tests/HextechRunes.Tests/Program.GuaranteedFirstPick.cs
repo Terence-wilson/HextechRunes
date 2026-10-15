@@ -18,7 +18,7 @@ internal static partial class Program
 		Action[] restore =
 		[
 			CaptureStaticCollectionRestore(typeof(HextechExternalContentRegistry), "PlayerRuneRegistrations"),
-			CaptureStaticCollectionRestore(typeof(HextechExternalContentRegistry), "AssetModIdsByModelId"),
+			CaptureStaticCollectionRestore(typeof(HextechExternalContentRegistry), "AssetModIdsByType"),
 			CaptureExternalRegistryVersionRestore()
 		];
 		try
@@ -94,8 +94,8 @@ internal static partial class Program
 		Action[] restore =
 		[
 			CaptureStaticCollectionRestore(typeof(HextechExternalContentRegistry), "PlayerRuneRegistrations"),
-			CaptureStaticCollectionRestore(typeof(HextechExternalContentRegistry), "AssetModIdsByModelId"),
-			CaptureStaticCollectionRestore(typeof(HextechExternalContentRegistry), "PlayerRuneCharacterIdsByModelId"),
+			CaptureStaticCollectionRestore(typeof(HextechExternalContentRegistry), "AssetModIdsByType"),
+			CaptureStaticCollectionRestore(typeof(HextechExternalContentRegistry), "PlayerRuneCharacterTypesByType"),
 			CaptureExternalRegistryVersionRestore(),
 			SuppressCompatibilityWarnings("external-content.rune-character-conflict")
 		];
@@ -153,9 +153,9 @@ internal static partial class Program
 		Action[] restore =
 		[
 			CaptureStaticCollectionRestore(typeof(HextechExternalContentRegistry), "PlayerRuneRegistrations"),
-			CaptureStaticCollectionRestore(typeof(HextechExternalContentRegistry), "AssetModIdsByModelId"),
-			CaptureStaticCollectionRestore(typeof(HextechExternalContentRegistry), "PlayerRuneAvailabilityByModelId"),
-			CaptureStaticCollectionRestore(typeof(HextechExternalContentRegistry), "PlayerRuneCharacterIdsByModelId"),
+			CaptureStaticCollectionRestore(typeof(HextechExternalContentRegistry), "AssetModIdsByType"),
+			CaptureStaticCollectionRestore(typeof(HextechExternalContentRegistry), "PlayerRuneAvailabilityByType"),
+			CaptureStaticCollectionRestore(typeof(HextechExternalContentRegistry), "PlayerRuneCharacterTypesByType"),
 			CaptureExternalRegistryVersionRestore()
 		];
 		using IDisposable models = InjectMissingModels(
