@@ -84,7 +84,7 @@
 ## 卡牌升级
 
 - **`CardUpgradeRuneBase<TCard>` 的局部替换一律是 `Priority.Low` 的条件 prefix。** 原版没有改变单张卡/Power 内部操作的细粒度 Hook；只有模型所属玩家持有对应符文时才跳过回调，其他玩家与未启用效果保持原版。
-- **这些局部替换的入口与异步 `MoveNext` 的 IL 冻结在 `vanilla_copy_guard.<target>.txt`。** 由通用守卫测试 `VanillaCopyGuardFreezesEntriesAndAsyncBodies` 校验；`HEXTECH_WRITE_PATCH_MANIFEST=1` 只追加缺失行，漂移行必须人工核对原版行为后手改，刷新快照不能代替行为审查。
+- **这些局部替换的入口与异步 `MoveNext` 的 IL 冻结在 `vanilla_copy_guard.<target>.txt`。** 由通用守卫测试 `VanillaCopyGuardFreezesEntriesAndAsyncBodies` 校验；`HEXTECH_WRITE_PATCH_MANIFEST=1` 只追加缺失行，漂移行必须人工核对原版行为后手改，刷新快照不能代替行为审查。哈希取自"元数据 token 解析成成员/字符串描述"后的 IL，不是原始字节：同一版本的 sts2.dll 在 Windows、macOS arm64、macOS x86_64 上分别编译（PE 目标机器不同），守卫目标里原始 IL 有九成只差 token 编号，按原始字节冻结会让非 macOS arm64 玩家整表误报 DRIFT（#22 的 Windows 日志即此）。不按平台分表、也不按 `release_info.json` 的 `main_assembly_hash` 选表：后者与任何一份实际发行的 sts2.dll 都对不上。`HextechVanillaCopyGuard.NormalizeIl`
 - **爪击的永久成长按 `DeckVersion` 去重写进 `HextechSelfUpgradeCardStore`。** 原版爪击的本场成长不写入永久计数；之后新获得的爪击不追溯之前的触发。`ClawUpgradeRune`
 - **吊杀施加独立的 `HextechHangPower`（倍率 2、4、8……），适用于该目标受到的所有伤害。** 但不把直接失去生命改成伤害，也不替换其他玩家原版吊杀的 Power。`HangUpgradeRune`
 - **狱火用自身伤害命令返回的 `DamageResult.TotalDamage` 施加灼烧。** 包含被格挡的伤害，但不把伤害链中其他效果的伤害算成狱火的。`InfernoUpgradeRune`

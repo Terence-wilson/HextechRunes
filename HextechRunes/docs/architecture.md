@@ -26,7 +26,7 @@ Platform/Hooks/Config/Localization/Telemetry
 - AsyncLocal 作用域补丁（Prefix 入栈）必须同时有 Postfix 与 Finalizer：Postfix 同步出栈并把 `ref __state` 清零，Finalizer 只在异常且 `__state` 仍持有作用域时出栈，异步续体只清账。
 - 私有成员访问集中经 `HextechHookReflection`，缺失成员会在启动摘要里列出。
 
-三道护栏（`tests/HextechRunes.Tests/`，三编译目标各一份，用 `HEXTECH_WRITE_PATCH_MANIFEST=1` 重生成）：`patch_manifest.<target>.txt` 冻结补丁目标与优先级；`static_state_manifest.<target>.txt` 冻结可变静态字段清单；`tests/vanilla_copy_guard.<target>.txt` 冻结所有可跳过原方法的 bool 前缀目标、以及声明 `CopiesVanillaLogic` 的补丁目标的 IL 哈希，异步目标连同编译器生成的 `MoveNext` 一起冻结（入口只是启动状态机的桩，原版改动几乎都落在 `MoveNext`）。目标清单来自 0.111.0 的 `HEXTECH_DUMP_PATCHES` 导出，各版本的行由测试 `VanillaCopyGuardFreezesEntriesAndAsyncBodies` 在对应 sts2.dll 上补齐；该测试只追加缺失行，漂移行只报告不刷新。游戏更新后 headless 日志出现 `[VanillaCopyGuard] DRIFT` 或测试报漂移即需对照原版复核替换逻辑。
+三道护栏（`tests/HextechRunes.Tests/`，三编译目标各一份，用 `HEXTECH_WRITE_PATCH_MANIFEST=1` 重生成）：`patch_manifest.<target>.txt` 冻结补丁目标与优先级；`static_state_manifest.<target>.txt` 冻结可变静态字段清单；`tests/vanilla_copy_guard.<target>.txt` 冻结所有可跳过原方法的 bool 前缀目标、以及声明 `CopiesVanillaLogic` 的补丁目标的 IL 哈希（token 先解析成成员描述，Windows/macOS 各自编译的同版本程序集共用一张表），异步目标连同编译器生成的 `MoveNext` 一起冻结（入口只是启动状态机的桩，原版改动几乎都落在 `MoveNext`）。目标清单来自 0.111.0 的 `HEXTECH_DUMP_PATCHES` 导出，各版本的行由测试 `VanillaCopyGuardFreezesEntriesAndAsyncBodies` 在对应 sts2.dll 上补齐；该测试只追加缺失行，漂移行只报告不刷新。游戏更新后 headless 日志出现 `[VanillaCopyGuard] DRIFT` 或测试报漂移即需对照原版复核替换逻辑。
 
 ## 当前 Selection 分层
 
